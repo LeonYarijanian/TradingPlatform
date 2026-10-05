@@ -1,0 +1,46 @@
+:root {
+  --bg: #04030b;
+  --bg-2: #050510;
+  --navy: #07072a;
+  --navy-2: #090a3c;
+  --indigo: #2010c7;
+  --indigo-2: #321cff;
+  --purple: #5c19e6;
+  --violet: #7d28ff;
+  --cyan: #47f4ff;
+  --mint: #5dffda;
+  --green: #63ff9a;
+  --white: #f8faff;
+  --magenta: #ff267a;
+  --red: #ff365f;
+  --yellow: #ffd247;
+  --orange: #ffaa38;
+
+  --panel: rgba(6, 7, 17, 0.9);
+  --panel-solid: #06070f;
+  --panel-border: rgba(210, 225, 255, 0.22);
+  --panel-border-strong: rgba(210, 225, 255, 0.4);
+  --text: #eef0ff;
+  --text-dim: rgba(205, 210, 255, 0.62);
+  --text-faint: rgba(205, 210, 255, 0.38);
+
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --glow-green: 0 0 10px rgba(99, 255, 154, 0.55);
+  --radius: 7px;
+  --gutter: clamp(10px, 1.2vw, 18px);
+  --hud-scale: 1;
+}
+
+@media (max-width: 1400px) {
+  :root {
+    --hud-scale: 0.92;
+  }
+}
+@media (max-width: 900px) {
+  :root {
+    --hud-scale: 0.84;
+  }
+}
