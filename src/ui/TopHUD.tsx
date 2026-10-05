@@ -13,6 +13,7 @@ function Clock() {
   const minute = useSim((s) => Math.floor(s.clock.minute));
   const finished = useSim((s) => s.clock.finished);
   const total = useSim((s) => s.days.length);
+  const live = useUi((s) => s.live);
   return (
     <div className="hud-clock">
       <span className="hud-days">
@@ -21,6 +22,7 @@ function Clock() {
       <span className="hud-time">
         {day ? `${day.label} · ${formatSessionTime(minute)} ET` : '—'}
         {finished && <em className="hud-closed">CLOSED</em>}
+        {live && <em className="hud-live">● LIVE</em>}
       </span>
     </div>
   );

@@ -18,6 +18,8 @@ export function goToScene(to: SceneId, workerId?: WorkerId | null, opts: { insta
   const sameScene = ui.scene === to && (to === 'city' || nextWorker === ui.stationWorkerId);
   if (sameScene && !ui.transition) return;
   clearTimers();
+  // A hovered tower never receives pointer-out once its scene is hidden.
+  if (typeof document !== 'undefined') document.body.style.cursor = '';
 
   const patchFor = (): Partial<ReturnType<typeof getUi>> =>
     to === 'station'

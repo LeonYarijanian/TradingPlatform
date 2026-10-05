@@ -120,7 +120,7 @@ export function TradingDesk() {
       </mesh>
 
       {/* Sticky notes */}
-      <mesh material={mats.note1} position={[-1.08, top + 0.002, -0.26]} rotation={[-Math.PI / 2, 0, 0.18]} raycast={NO_RAYCAST}>
+      <mesh material={mats.note1} position={[-1.2, top + 0.002, -0.55]} rotation={[-Math.PI / 2, 0, 0.18]} raycast={NO_RAYCAST}>
         <planeGeometry args={[0.13, 0.13]} />
       </mesh>
       <mesh material={mats.note2} position={[0.55, top + 0.003, -0.22]} rotation={[-Math.PI / 2, 0, -0.12]} raycast={NO_RAYCAST}>
@@ -128,7 +128,7 @@ export function TradingDesk() {
       </mesh>
 
       {/* The big red/pink button */}
-      <group position={[-0.7, top, -0.36]}>
+      <group position={[-1.02, top, -0.3]}>
         <mesh material={mats.buttonBase} position={[0, 0.02, 0]} raycast={NO_RAYCAST}>
           <cylinderGeometry args={[0.11, 0.12, 0.04, 40]} />
         </mesh>

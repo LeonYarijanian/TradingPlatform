@@ -15,6 +15,6 @@ export const CITY_CAMERA = {
 };
 
 export const STATION_CAMERA = {
-  position: [1.22, 2.18, 2.25] as [number, number, number],
+  position: [1.22, 2.42, 2.25] as [number, number, number],
   target: [0.02, 1.27, -0.8] as [number, number, number],
 };

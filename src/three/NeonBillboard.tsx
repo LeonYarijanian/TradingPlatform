@@ -89,8 +89,8 @@ export function NeonBillboard({ text, color, position, rotationY = 0, width, hei
 }
 
 export const BILLBOARDS: Props[] = [
-  { text: '0DTE', color: '#FF267A', position: [-16.5, 12.4, -22], rotationY: 0.36, width: 6.2, height: 2.6, flicker: true },
-  { text: 'BUY THE DIP', color: '#63FF9A', position: [-7.6, 15.6, -29], rotationY: 0.14, width: 10.4, height: 2.3 },
-  { text: 'VWAP', color: '#47F4FF', position: [8.6, 15.2, -29], rotationY: -0.14, width: 6.4, height: 2.3 },
-  { text: 'THETA GANG', color: '#FFD247', position: [17, 11.8, -22], rotationY: -0.36, width: 10.8, height: 2.5, flicker: true },
+  { text: '0DTE', color: '#FF267A', position: [-16.8, 12.4, -23], rotationY: 0.36, width: 5.4, height: 2.25, flicker: true },
+  { text: 'BUY THE DIP', color: '#63FF9A', position: [-7.6, 15.6, -30], rotationY: 0.14, width: 9.2, height: 2.05 },
+  { text: 'VWAP', color: '#47F4FF', position: [8.6, 15.2, -30], rotationY: -0.14, width: 5.6, height: 2.05 },
+  { text: 'THETA GANG', color: '#FFD247', position: [17.4, 11.8, -23], rotationY: -0.36, width: 9.4, height: 2.2, flicker: true },
 ];

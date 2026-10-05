@@ -15,10 +15,17 @@ import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { useUi } from './app/uiStore';
 import { engine, resetRun } from './simulation/controller';
+import { connectSource, SSEEventSource, WebSocketEventSource } from './simulation/liveSources';
 import { usePlayback, useSim } from './simulation/simulationStore';
 
-// Prime the store with the initial run state before the first render.
-resetRun();
+// Live mode (?ws=wss://… or ?sse=https://…): a real backend streams BotEvents.
+// Otherwise prime the store with the deterministic demo run.
+const live = useUi.getState().live;
+if (live) {
+  connectSource(live.kind === 'ws' ? new WebSocketEventSource(live.url) : new SSEEventSource(live.url));
+} else {
+  resetRun();
+}
 
 // Dev-only handle for scripted visual checks (never shipped in production builds).
 if (import.meta.env.DEV) {

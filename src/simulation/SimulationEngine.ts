@@ -293,7 +293,9 @@ export class SimulationEngine implements BotEventSource {
 
     for (const w of WORKERS) {
       const snap = this.snapshot(w.id, to);
-      const key = `${snap.status}|${snap.direction}|${Math.round(snap.charge)}|${snap.atrAway.toFixed(2)}`;
+      // Idle ATR distance only needs coarse updates; while charging it tracks the charge.
+      const atrKey = snap.status === 'charging' || snap.status === 'ready' ? snap.atrAway.toFixed(2) : snap.atrAway.toFixed(1);
+      const key = `${snap.status}|${snap.direction}|${Math.round(snap.charge)}|${atrKey}`;
       if (key !== this.lastStatus[w.id] || initial) {
         this.lastStatus[w.id] = key;
         const ev: BotStatusEvent = {

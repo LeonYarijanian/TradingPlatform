@@ -36,8 +36,8 @@ function towerFocus(id: WorkerId, aspect: number): View {
   const d = TOWER_DESIGNS[id];
   const [x, , z] = d.worker.position;
   const k = aspectFactor(aspect);
-  const target = new THREE.Vector3(x * 0.92, d.spireTop * 0.5 + 0.4, z);
-  const position = new THREE.Vector3(x * 0.7, d.spireTop * 0.58 + 2.6, z + (8.5 + d.spireTop * 0.35) * k);
+  const target = new THREE.Vector3(x * 0.92, d.spireTop * 0.53 + 0.3, z);
+  const position = new THREE.Vector3(x * 0.7, d.spireTop * 0.6 + 2.4, z + (8.2 + d.spireTop * 0.68) * k);
   return { target, position };
 }
 

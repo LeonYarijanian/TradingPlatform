@@ -47,7 +47,7 @@ export function SceneRoot() {
     <Canvas
       className="scene-canvas"
       flat
-      dpr={[1, lowPower ? 1.3 : 1.75]}
+      dpr={[1, lowPower ? 1.25 : 1.5]}
       gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
       camera={{ fov: CITY_CAMERA.fov, near: 0.1, far: 600, position: CITY_CAMERA.position }}
       onCreated={(state) => {

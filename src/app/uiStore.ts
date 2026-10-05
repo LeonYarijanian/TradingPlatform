@@ -11,7 +11,14 @@ export interface SceneTransition {
   startedAt: number;
 }
 
+export interface LiveSourceConfig {
+  kind: 'ws' | 'sse';
+  url: string;
+}
+
 export interface UiStore {
+  /** When set, a live backend drives the UI and the demo engine is idle. */
+  live: LiveSourceConfig | null;
   scene: SceneId;
   stationWorkerId: WorkerId;
   selectedWorkerId: WorkerId | null;
@@ -42,13 +49,20 @@ const lowPower =
     typeof window !== 'undefined' &&
     (window.innerWidth < 760 || (typeof navigator !== 'undefined' && (navigator.hardwareConcurrency ?? 8) <= 4)));
 
+const live: LiveSourceConfig | null = params.get('ws')
+  ? { kind: 'ws', url: params.get('ws')! }
+  : params.get('sse')
+    ? { kind: 'sse', url: params.get('sse')! }
+    : null;
+
 export const useUi = create<UiStore>()((set) => ({
+  live,
   scene: params.get('scene') === 'station' ? 'station' : 'city',
   stationWorkerId: 'qqq-og',
   selectedWorkerId: null,
   hoveredWorkerId: null,
   summaryOpen: false,
-  autoDemo: params.get('demo') !== '0',
+  autoDemo: !live && params.get('demo') !== '0',
   muted: true,
   debugOpen: params.get('debug') === '1',
   ready: false,

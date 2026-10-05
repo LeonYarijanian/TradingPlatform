@@ -31,7 +31,7 @@ export function StationLighting() {
       <directionalLight color="#d6fff4" intensity={1.5} position={[2.5, 3.5, 4]} />
       <pointLight color="#7a3cff" intensity={3.2} distance={4} decay={2} position={[0, 0.42, -0.25]} />
       <pointLight ref={screen} color="#b9c9ff" intensity={2.6} distance={3.5} decay={2} position={[0, 1.35, -0.45]} />
-      <pointLight ref={flash} color="#ffffff" intensity={0} distance={4} decay={2} position={[-0.5, 1.0, -0.2]} />
+      <pointLight ref={flash} color="#ffffff" intensity={0} distance={4} decay={2} position={[-0.95, 1.0, -0.1]} />
     </>
   );
 }

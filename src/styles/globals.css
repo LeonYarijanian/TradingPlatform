@@ -79,6 +79,10 @@ kbd {
   pointer-events: auto;
 }
 
+.app.scene-station .ticker {
+  display: none;
+}
+
 .app.summary-open .hud-layer {
   opacity: 0.25;
   transition: opacity 300ms ease;
@@ -217,6 +221,14 @@ kbd {
   border-radius: 3px;
   color: var(--yellow);
   border: 1px solid rgba(255, 210, 71, 0.5);
+}
+
+.hud-live {
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--red);
+  animation: blink 1.4s infinite;
 }
 
 .hud-chips {
@@ -1343,7 +1355,15 @@ kbd {
   .top-hud {
     right: var(--gutter);
   }
-  .hud-chips {
+  .hud-live {
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--red);
+  animation: blink 1.4s infinite;
+}
+
+.hud-chips {
     flex-direction: row;
     width: auto;
     overflow-x: auto;
@@ -1392,6 +1412,53 @@ kbd {
   .debug-panel {
     top: auto;
     bottom: 160px;
+  }
+}
+
+/* Phones: shrink in-world labels so neighbouring towers don't collide. */
+@media (max-width: 760px) {
+  .status-card {
+    min-width: 0;
+    padding: 3px 6px 4px;
+    border-radius: 5px;
+  }
+  .sc-name {
+    font-size: 9px;
+  }
+  .sc-status,
+  .sc-earned {
+    font-size: 8px;
+  }
+  .sc-earned {
+    display: none;
+  }
+  .tower-plaque {
+    min-width: 0;
+    padding: 2px 5px 3px;
+  }
+  .tp-name {
+    font-size: 8.5px;
+  }
+  .tp-pnl {
+    font-size: 8px;
+  }
+  .vault-label {
+    padding: 4px 9px 5px;
+  }
+  .vl-head {
+    font-size: 7.5px;
+  }
+  .vl-total {
+    font-size: 19px;
+  }
+  .vl-sub {
+    font-size: 7.5px;
+  }
+  .wall-tag {
+    transform: scale(0.75);
+  }
+  .pnl-popups span {
+    font-size: 11px;
   }
 }
 

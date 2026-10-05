@@ -22,7 +22,7 @@ export function useSimulationLoop(): void {
       const ui = getUi();
       const playback = usePlayback.getState();
 
-      if (ui.ready) {
+      if (ui.ready && !ui.live) {
         let speed = playback.speed;
         if (ui.autoDemo) {
           if (!demoDirector.active) demoDirector.start(engine.currentTime === 0);
