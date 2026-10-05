@@ -110,7 +110,14 @@ function buildDesign(worker: WorkerConfig): TowerDesign {
     y += h;
     return s;
   });
-  const crown: BoxSpec = { x, y, z, w: recipe.sections[recipe.sections.length - 1][0] * 0.55, h: 0.22, d: recipe.sections[recipe.sections.length - 1][0] * 0.55 };
+  const crown: BoxSpec = {
+    x,
+    y,
+    z,
+    w: recipe.sections[recipe.sections.length - 1][0] * 0.55,
+    h: 0.22,
+    d: recipe.sections[recipe.sections.length - 1][0] * 0.55,
+  };
   const roofY = y + crown.h;
   const spireTop = roofY + recipe.spire;
   const top = sections[sections.length - 1];
@@ -177,6 +184,7 @@ function buildDesign(worker: WorkerConfig): TowerDesign {
   };
 }
 
-export const TOWER_DESIGNS: Record<WorkerId, TowerDesign> = Object.fromEntries(
-  WORKERS.map((w) => [w.id, buildDesign(w)]),
-) as Record<WorkerId, TowerDesign>;
+export const TOWER_DESIGNS: Record<WorkerId, TowerDesign> = Object.fromEntries(WORKERS.map((w) => [w.id, buildDesign(w)])) as Record<
+  WorkerId,
+  TowerDesign
+>;

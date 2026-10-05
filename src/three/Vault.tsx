@@ -9,14 +9,7 @@ import { getSim } from '../simulation/simulationStore';
 import { VaultLabel } from '../ui/VaultLabel';
 import { GEOMETRIES, MATERIALS } from './materials';
 import { hdr, PALETTE } from './palette';
-import {
-  PLAZA_RADIUS,
-  VAULT_BASE_HEIGHT,
-  VAULT_DOME_RADIUS,
-  VAULT_POS,
-  VAULT_WALL_HEIGHT,
-  VAULT_WALL_RADIUS,
-} from './layout';
+import { PLAZA_RADIUS, VAULT_BASE_HEIGHT, VAULT_DOME_RADIUS, VAULT_POS, VAULT_WALL_HEIGHT, VAULT_WALL_RADIUS } from './layout';
 import { NO_RAYCAST } from './WindowsMesh';
 
 const PANELS = 20;
@@ -45,7 +38,13 @@ export function Vault({ showLabel }: { showLabel: boolean }) {
       trim: new THREE.MeshBasicMaterial({ color: hdr('#ffffff', 2.6) }),
       plazaRing: new THREE.MeshBasicMaterial({ color: hdr('#e9ecff', 2.2) }),
       plazaInner: new THREE.MeshBasicMaterial({ color: hdr(PALETTE.cyan, 1.1) }),
-      wall: new THREE.MeshStandardMaterial({ color: '#1a0c08', roughness: 0.6, metalness: 0.3, emissive: '#3a1a05', emissiveIntensity: 0.6 }),
+      wall: new THREE.MeshStandardMaterial({
+        color: '#1a0c08',
+        roughness: 0.6,
+        metalness: 0.3,
+        emissive: '#3a1a05',
+        emissiveIntensity: 0.6,
+      }),
       plaza: new THREE.MeshStandardMaterial({ color: '#0a0920', roughness: 0.45, metalness: 0.5 }),
     }),
     [],
@@ -57,7 +56,11 @@ export function Vault({ showLabel }: { showLabel: boolean }) {
     for (let i = 0; i < PANELS; i++) {
       const a = (i / PANELS) * Math.PI * 2;
       const m = new THREE.Matrix4().compose(
-        new THREE.Vector3(Math.sin(a) * (VAULT_WALL_RADIUS + 0.015), VAULT_BASE_HEIGHT + VAULT_WALL_HEIGHT / 2, Math.cos(a) * (VAULT_WALL_RADIUS + 0.015)),
+        new THREE.Vector3(
+          Math.sin(a) * (VAULT_WALL_RADIUS + 0.015),
+          VAULT_BASE_HEIGHT + VAULT_WALL_HEIGHT / 2,
+          Math.cos(a) * (VAULT_WALL_RADIUS + 0.015),
+        ),
         new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), a),
         new THREE.Vector3(1, 1, 1),
       );
@@ -85,7 +88,8 @@ export function Vault({ showLabel }: { showLabel: boolean }) {
   useFrame((state, dt) => {
     const sim = getSim();
     if (sim.vaultSeq !== lastSeq.current) {
-      if (sim.vaultSeq > lastSeq.current && sim.lastDeposit && sim.lastDeposit.amount > 0) vaultPulse.value = Math.min(1.5, vaultPulse.value + 0.35);
+      if (sim.vaultSeq > lastSeq.current && sim.lastDeposit && sim.lastDeposit.amount > 0)
+        vaultPulse.value = Math.min(1.5, vaultPulse.value + 0.35);
       lastSeq.current = sim.vaultSeq;
     }
     vaultPulse.value = Math.max(0, vaultPulse.value - dt * 1.6);
@@ -106,8 +110,20 @@ export function Vault({ showLabel }: { showLabel: boolean }) {
   return (
     <group position={[vx, 0, vz]}>
       <mesh geometry={geo.plaza} material={mats.plaza} position={[0, 0.05, 0]} raycast={NO_RAYCAST} />
-      <mesh geometry={geo.plazaRing} material={mats.plazaRing} position={[0, 0.11, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST} />
-      <mesh geometry={geo.plazaInner} material={mats.plazaInner} position={[0, 0.11, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST} />
+      <mesh
+        geometry={geo.plazaRing}
+        material={mats.plazaRing}
+        position={[0, 0.11, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+        raycast={NO_RAYCAST}
+      />
+      <mesh
+        geometry={geo.plazaInner}
+        material={mats.plazaInner}
+        position={[0, 0.11, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+        raycast={NO_RAYCAST}
+      />
       <mesh geometry={geo.base} material={MATERIALS.platform} position={[0, 0.1 + VAULT_BASE_HEIGHT / 2, 0]} raycast={NO_RAYCAST} />
       <group position={[0, 0.1, 0]}>
         <mesh geometry={geo.wall} material={mats.wall} position={[0, VAULT_BASE_HEIGHT + VAULT_WALL_HEIGHT / 2, 0]} raycast={NO_RAYCAST} />
@@ -123,10 +139,22 @@ export function Vault({ showLabel }: { showLabel: boolean }) {
           raycast={NO_RAYCAST}
         />
         <mesh geometry={geo.trimTop} material={mats.trim} position={[0, wallTop, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST} />
-        <mesh geometry={geo.trimLow} material={mats.trim} position={[0, VAULT_BASE_HEIGHT + 0.03, 0]} rotation={[Math.PI / 2, 0, 0]} raycast={NO_RAYCAST} />
+        <mesh
+          geometry={geo.trimLow}
+          material={mats.trim}
+          position={[0, VAULT_BASE_HEIGHT + 0.03, 0]}
+          rotation={[Math.PI / 2, 0, 0]}
+          raycast={NO_RAYCAST}
+        />
         <mesh geometry={geo.dome} material={mats.dome} position={[0, wallTop, 0]} raycast={NO_RAYCAST} />
         <mesh geometry={geo.halo} material={mats.halo} position={[0, wallTop - 0.02, 0]} raycast={NO_RAYCAST} />
-        <mesh geometry={GEOMETRIES.sphere} material={mats.trim} position={[0, wallTop + VAULT_DOME_RADIUS + 0.06, 0]} scale={0.07} raycast={NO_RAYCAST} />
+        <mesh
+          geometry={GEOMETRIES.sphere}
+          material={mats.trim}
+          position={[0, wallTop + VAULT_DOME_RADIUS + 0.06, 0]}
+          scale={0.07}
+          raycast={NO_RAYCAST}
+        />
       </group>
       <pointLight ref={lightRef} position={[0, 1.6, 0.4]} color={PALETTE.orange} intensity={22} distance={10} decay={2} />
 

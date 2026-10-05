@@ -201,7 +201,13 @@ export function createSparkMaterial(): THREE.ShaderMaterial {
 /* Ground grid with distance fade                                      */
 /* ------------------------------------------------------------------ */
 
-export function createGridMaterial(opts: { color: string; base: string; scale: number; fade: number; lineWidth?: number }): THREE.ShaderMaterial {
+export function createGridMaterial(opts: {
+  color: string;
+  base: string;
+  scale: number;
+  fade: number;
+  lineWidth?: number;
+}): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([
       THREE.UniformsLib.fog,

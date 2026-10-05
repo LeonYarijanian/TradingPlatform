@@ -42,7 +42,13 @@ export function SignalBeam({ design }: { design: TowerDesign }) {
     const sparks = new THREE.BufferGeometry();
     const count = lowPower ? SPARK_COUNT / 2 : SPARK_COUNT;
     sparks.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(count * 3), 3));
-    sparks.setAttribute('aSeed', new THREE.Float32BufferAttribute(Float32Array.from({ length: count }, () => Math.random()), 1));
+    sparks.setAttribute(
+      'aSeed',
+      new THREE.Float32BufferAttribute(
+        Float32Array.from({ length: count }, () => Math.random()),
+        1,
+      ),
+    );
     return { core: cyl(0.05), shell: cyl(0.26), glow: cyl(0.9), plane: new THREE.PlaneGeometry(1, 1), sparks };
   }, [lowPower]);
 

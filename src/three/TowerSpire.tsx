@@ -57,17 +57,33 @@ export function TowerSpire({ design }: { design: TowerDesign }) {
     const active = fx.charge > 0.02 || fx.beam > 0.02 || fx.status === 'ready' || fx.status === 'firing';
     const mixAmt = active ? 0.55 : 0.18;
 
-    tmp.copy(WHITE).lerp(fx.color, mixAmt).multiplyScalar(1.1 * glow);
+    tmp
+      .copy(WHITE)
+      .lerp(fx.color, mixAmt)
+      .multiplyScalar(1.1 * glow);
     mats.spire.color.copy(tmp);
-    tmp.copy(WHITE).lerp(fx.color, mixAmt * 0.7).multiplyScalar(2.4 * glow);
+    tmp
+      .copy(WHITE)
+      .lerp(fx.color, mixAmt * 0.7)
+      .multiplyScalar(2.4 * glow);
     mats.emitter.color.copy(tmp);
-    tmp.copy(WHITE).lerp(fx.color, 0.35).multiplyScalar(1.6 * glow);
+    tmp
+      .copy(WHITE)
+      .lerp(fx.color, 0.35)
+      .multiplyScalar(1.6 * glow);
     mats.ornament.color.copy(tmp);
-    const ringGlow = 0.9 + fx.charge * 2.2 + fx.beam * 2 + fx.highlight * 0.6 + (fx.status === 'managing' || fx.status === 'trailing' ? 0.9 : 0);
-    tmp.copy(WHITE).lerp(fx.color, active ? 0.45 : 0.1).multiplyScalar(ringGlow);
+    const ringGlow =
+      0.9 + fx.charge * 2.2 + fx.beam * 2 + fx.highlight * 0.6 + (fx.status === 'managing' || fx.status === 'trailing' ? 0.9 : 0);
+    tmp
+      .copy(WHITE)
+      .lerp(fx.color, active ? 0.45 : 0.1)
+      .multiplyScalar(ringGlow);
     mats.ring.color.copy(tmp);
     mats.ring2.color.copy(tmp).multiplyScalar(0.8);
-    tmp.copy(WHITE).lerp(accent, 0.5).multiplyScalar(1.1 + fx.highlight * 0.8 + fx.charge * 0.8);
+    tmp
+      .copy(WHITE)
+      .lerp(accent, 0.5)
+      .multiplyScalar(1.1 + fx.highlight * 0.8 + fx.charge * 0.8);
     mats.crown.color.copy(tmp);
 
     if (ringRef.current) {

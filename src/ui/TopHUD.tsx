@@ -33,7 +33,8 @@ const WorkerChip = memo(function WorkerChip({ id }: { id: WorkerId }) {
   const rt = useSim((s) => s.workers[id]);
   const selected = useUi((s) => (s.scene === 'city' ? s.selectedWorkerId === id : s.stationWorkerId === id));
   const tone = statusTone(rt);
-  const label = rt.status === 'charging' || rt.status === 'ready' ? `${STATUS_LABEL[rt.status]} ${Math.round(rt.charge)}%` : STATUS_LABEL[rt.status];
+  const label =
+    rt.status === 'charging' || rt.status === 'ready' ? `${STATUS_LABEL[rt.status]} ${Math.round(rt.charge)}%` : STATUS_LABEL[rt.status];
   return (
     <button
       type="button"

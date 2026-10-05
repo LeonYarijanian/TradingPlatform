@@ -64,9 +64,10 @@ function initial(): TowerFxState {
   };
 }
 
-export const towerFx: Record<WorkerId, TowerFxState> = Object.fromEntries(
-  WORKERS.map((w) => [w.id, initial()]),
-) as Record<WorkerId, TowerFxState>;
+export const towerFx: Record<WorkerId, TowerFxState> = Object.fromEntries(WORKERS.map((w) => [w.id, initial()])) as Record<
+  WorkerId,
+  TowerFxState
+>;
 
 let lastRunId = -1;
 let phase: Record<WorkerId, number> = Object.fromEntries(WORKERS.map((w) => [w.id, Math.random() * 10])) as Record<WorkerId, number>;
@@ -147,8 +148,7 @@ export function updateTowerFx(dt: number): void {
     if (fx.beam < 0.01 && a > 1) fx.beamGrow = 0;
 
     // Spire pulse.
-    const rate =
-      rt.status === 'ready' ? 7 : rt.status === 'charging' ? 1 + fx.rawCharge * 4.5 : rt.status === 'firing' ? 9 : 0.7;
+    const rate = rt.status === 'ready' ? 7 : rt.status === 'charging' ? 1 + fx.rawCharge * 4.5 : rt.status === 'firing' ? 9 : 0.7;
     phase[w.id] += dt * rate * Math.PI * 2 * (reduced ? 0.3 : 1);
     fx.pulse = 0.5 + 0.5 * Math.sin(phase[w.id]);
 

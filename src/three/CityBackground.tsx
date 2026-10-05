@@ -132,7 +132,10 @@ export function SkyDashes({ count = 70 }: { count?: number }) {
       tint: rng(),
     }));
   }, [count]);
-  const material = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false }), []);
+  const material = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false }),
+    [],
+  );
   const m = useMemo(() => new THREE.Matrix4(), []);
 
   useFrame((_, dt) => {
@@ -154,7 +157,9 @@ export function SkyDashes({ count = 70 }: { count?: number }) {
       ref={(mesh) => {
         ref.current = mesh;
         if (!mesh) return;
-        items.forEach((it, i) => mesh.setColorAt(i, it.tint < 0.6 ? hdr('#c9b8ff', 1.1) : it.tint < 0.85 ? hdr('#7ff6ff', 1.2) : hdr('#ff6ab0', 1.1)));
+        items.forEach((it, i) =>
+          mesh.setColorAt(i, it.tint < 0.6 ? hdr('#c9b8ff', 1.1) : it.tint < 0.85 ? hdr('#7ff6ff', 1.2) : hdr('#ff6ab0', 1.1)),
+        );
       }}
       args={[undefined, material, count]}
       frustumCulled={false}

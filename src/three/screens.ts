@@ -225,7 +225,14 @@ export function drawChartScreen(ctx: CanvasRenderingContext2D, w: number, h: num
 /* Signal scanner + THOUGHTS                                           */
 /* ------------------------------------------------------------------ */
 
-export function drawScannerScreen(ctx: CanvasRenderingContext2D, w: number, h: number, sim: SimData, workerId: WorkerId, time: number): void {
+export function drawScannerScreen(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  sim: SimData,
+  workerId: WorkerId,
+  time: number,
+): void {
   const cfg = WORKER_BY_ID[workerId];
   const rt = sim.workers[workerId];
   ctx.fillStyle = C.bg;
@@ -249,7 +256,8 @@ export function drawScannerScreen(ctx: CanvasRenderingContext2D, w: number, h: n
   ctx.font = `600 25px ${MONO}`;
   let setup: string;
   if (charging && dir) setup = `${cfg.setupName} ${ARROW[dir]} ${dir} · ${rt.atrAway.toFixed(2)} ATR away`;
-  else if (inTrade && dir) setup = `IN TRADE ${ARROW[dir]} ${dir} x${rt.position?.contracts ?? ''} @ ${rt.position?.entryPrice.toFixed(2) ?? ''}`;
+  else if (inTrade && dir)
+    setup = `IN TRADE ${ARROW[dir]} ${dir} x${rt.position?.contracts ?? ''} @ ${rt.position?.entryPrice.toFixed(2) ?? ''}`;
   else if (rt.status === 'off-duty') setup = 'off duty · market closed';
   else setup = `${cfg.setupName} · scanning · ${rt.atrAway.toFixed(2)} ATR away`;
   ctx.fillStyle = charging ? (dir === 'PUT' ? C.magenta : C.mint) : inTrade ? C.yellow : C.text;
@@ -312,7 +320,15 @@ export function drawScannerScreen(ctx: CanvasRenderingContext2D, w: number, h: n
     ctx.fillStyle = C.dim;
     ctx.fillText(formatSessionTime(entry.minute).padStart(5, ' '), 30, y);
     ctx.fillStyle =
-      entry.tone === 'profit' ? C.green : entry.tone === 'loss' ? C.red : entry.tone === 'warn' ? '#ff8fb0' : entry.tone === 'action' ? '#ffffff' : 'rgba(225,228,255,0.8)';
+      entry.tone === 'profit'
+        ? C.green
+        : entry.tone === 'loss'
+          ? C.red
+          : entry.tone === 'warn'
+            ? '#ff8fb0'
+            : entry.tone === 'action'
+              ? '#ffffff'
+              : 'rgba(225,228,255,0.8)';
     ctx.fillText(entry.text, 120, y, w - 150);
     ctx.globalAlpha = 1;
   });
@@ -327,7 +343,14 @@ export function drawScannerScreen(ctx: CanvasRenderingContext2D, w: number, h: n
 /* Side panel: position / P&L                                          */
 /* ------------------------------------------------------------------ */
 
-export function drawPositionScreen(ctx: CanvasRenderingContext2D, w: number, h: number, sim: SimData, workerId: WorkerId, time: number): void {
+export function drawPositionScreen(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  sim: SimData,
+  workerId: WorkerId,
+  time: number,
+): void {
   const cfg = WORKER_BY_ID[workerId];
   const rt = sim.workers[workerId];
   const day = sim.days[sim.clock.dayIndex];
@@ -348,7 +371,9 @@ export function drawPositionScreen(ctx: CanvasRenderingContext2D, w: number, h: 
     ['TRADES', `${rt.tradesToday} today · ${rt.wins}W ${rt.losses}L`, C.text],
     [
       'POSITION',
-      rt.position ? `${ARROW[rt.position.direction]} ${rt.position.direction} x${rt.position.contracts} @ ${rt.position.entryPrice.toFixed(2)}` : 'flat',
+      rt.position
+        ? `${ARROW[rt.position.direction]} ${rt.position.direction} x${rt.position.contracts} @ ${rt.position.entryPrice.toFixed(2)}`
+        : 'flat',
       rt.position ? (rt.position.direction === 'CALL' ? C.mint : C.magenta) : C.dim,
     ],
   ];

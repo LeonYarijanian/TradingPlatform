@@ -24,11 +24,22 @@ interface Props {
 }
 
 /** A desk monitor whose screen is a live-drawn canvas texture (blooms + depth-correct). */
-export function Monitor({ width, height, position, rotation = [0, 0, 0], resolution, draw, fps = 30, glow = '#5a3cff', standHeight = 0.3 }: Props) {
+export function Monitor({
+  width,
+  height,
+  position,
+  rotation = [0, 0, 0],
+  resolution,
+  draw,
+  fps = 30,
+  glow = '#5a3cff',
+  standHeight = 0.3,
+}: Props) {
+  const [resW, resH] = resolution;
   const { canvas, ctx, texture } = useMemo(() => {
     const canvas = document.createElement('canvas');
-    canvas.width = resolution[0];
-    canvas.height = resolution[1];
+    canvas.width = resW;
+    canvas.height = resH;
     const ctx = canvas.getContext('2d')!;
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -36,10 +47,11 @@ export function Monitor({ width, height, position, rotation = [0, 0, 0], resolut
     texture.minFilter = THREE.LinearFilter;
     texture.anisotropy = 4;
     return { canvas, ctx, texture };
-  }, [resolution]);
+  }, [resW, resH]);
   useEffect(() => () => texture.dispose(), [texture]);
 
   const screenMat = useMemo(() => new THREE.MeshBasicMaterial({ map: texture, color: new THREE.Color(1.25, 1.25, 1.25) }), [texture]);
+  useEffect(() => () => screenMat.dispose(), [screenMat]);
   const bezelMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#05050c', roughness: 0.35, metalness: 0.6 }), []);
   const glowMat = useMemo(() => new THREE.MeshBasicMaterial({ color: hdr(glow, 2.4) }), [glow]);
   const frame = useMemo(() => rectFrameGeometry(width + 0.06, height + 0.06, 0.008, 0.01), [width, height]);

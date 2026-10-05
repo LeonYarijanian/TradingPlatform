@@ -39,10 +39,7 @@ void main() {
 
 export function createWindowMaterial(): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
-    uniforms: THREE.UniformsUtils.merge([
-      THREE.UniformsLib.fog,
-      { uTime: { value: 0 }, uBoost: { value: 1 }, uTwinkle: { value: 1 } },
-    ]),
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 }, uBoost: { value: 1 }, uTwinkle: { value: 1 } }]),
     vertexShader: vertex,
     fragmentShader: fragment,
     fog: true,

@@ -43,7 +43,14 @@ export function RobotWorker({ position = [-0.14, 0, 0.18] as [number, number, nu
         sheen: 0.4,
         sheenColor: new THREE.Color('#d8fff6'),
       }),
-      limb: new THREE.MeshPhysicalMaterial({ color: '#c8fff1', emissive: new THREE.Color('#2fbf9c'), emissiveIntensity: 0.22, roughness: 0.3, metalness: 0.1, clearcoat: 0.7 }),
+      limb: new THREE.MeshPhysicalMaterial({
+        color: '#c8fff1',
+        emissive: new THREE.Color('#2fbf9c'),
+        emissiveIntensity: 0.22,
+        roughness: 0.3,
+        metalness: 0.1,
+        clearcoat: 0.7,
+      }),
       dark: new THREE.MeshStandardMaterial({ color: '#07070f', roughness: 0.45, metalness: 0.55 }),
       joint: new THREE.MeshStandardMaterial({ color: '#0b0b14', roughness: 0.35, metalness: 0.7 }),
       glow: new THREE.MeshBasicMaterial({ color: hdr(PALETTE.mint, 2.6) }),
@@ -89,7 +96,11 @@ export function RobotWorker({ position = [-0.14, 0, 0.18] as [number, number, nu
     const inTrade = fx.status === 'managing' || fx.status === 'trailing' || fx.status === 'firing';
 
     // Head: glance at the scanner while charging, otherwise follow the chart.
-    const yawTarget = charging ? 0.42 + 0.04 * Math.sin(t * 1.3) : inTrade ? -0.05 + 0.06 * Math.sin(t * 0.8) : 0.05 * Math.sin(t * 0.37) - 0.04;
+    const yawTarget = charging
+      ? 0.42 + 0.04 * Math.sin(t * 1.3)
+      : inTrade
+        ? -0.05 + 0.06 * Math.sin(t * 0.8)
+        : 0.05 * Math.sin(t * 0.37) - 0.04;
     const pitchTarget = s.armsUp > 0.3 ? -0.25 : charging ? 0.12 : 0.05 + 0.04 * Math.sin(t * 0.6);
     s.yaw = damp(s.yaw, yawTarget, 3.2, dt);
     s.pitch = damp(s.pitch, pitchTarget, 3.2, dt);
@@ -122,7 +133,10 @@ export function RobotWorker({ position = [-0.14, 0, 0.18] as [number, number, nu
     const flash = c < 1.2 ? 1 - c / 1.2 : 0;
     const pulse = charging ? 0.5 + 0.5 * Math.sin(t * (4 + fx.charge * 10)) : 0.3 + 0.2 * Math.sin(t * 1.5);
     const color = fx.color;
-    mats.antenna.color.setRGB(1, 1, 1).lerp(color, charging || flash > 0 ? 0.55 : 0.15).multiplyScalar(2 + pulse * 1.5 + flash * 6);
+    mats.antenna.color
+      .setRGB(1, 1, 1)
+      .lerp(color, charging || flash > 0 ? 0.55 : 0.15)
+      .multiplyScalar(2 + pulse * 1.5 + flash * 6);
     if (antennaRef.current) antennaRef.current.scale.setScalar(0.034 * (1 + flash * 0.8));
     mats.glow.color.set(PALETTE.mint).multiplyScalar(2.2 + flash * 3 + pulse * 0.6);
   });
@@ -190,7 +204,13 @@ export function RobotWorker({ position = [-0.14, 0, 0.18] as [number, number, nu
         {[0, 1, 2, 3, 4].map((i) => {
           const a = (i / 5) * Math.PI * 2;
           return (
-            <mesh key={i} material={mats.chair} position={[Math.sin(a) * 0.17, 0.035, 0.02 + Math.cos(a) * 0.17]} rotation={[0, a, 0]} raycast={NO_RAYCAST}>
+            <mesh
+              key={i}
+              material={mats.chair}
+              position={[Math.sin(a) * 0.17, 0.035, 0.02 + Math.cos(a) * 0.17]}
+              rotation={[0, a, 0]}
+              raycast={NO_RAYCAST}
+            >
               <boxGeometry args={[0.04, 0.03, 0.34]} />
             </mesh>
           );

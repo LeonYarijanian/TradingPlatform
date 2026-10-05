@@ -37,10 +37,7 @@ export function TradingTower({ design, showLabels }: { design: TowerDesign; show
     };
   }, [design, id, mainBoxes]);
 
-  const edgeMat = useMemo(
-    () => new THREE.LineBasicMaterial({ color: new THREE.Color('#3b2fb8'), transparent: true, opacity: 0.7 }),
-    [],
-  );
+  const edgeMat = useMemo(() => new THREE.LineBasicMaterial({ color: new THREE.Color('#3b2fb8'), transparent: true, opacity: 0.7 }), []);
   const baseEdge = useMemo(() => new THREE.Color('#3b2fb8').multiplyScalar(1.2), []);
   const hiEdge = useMemo(() => new THREE.Color(design.worker.accent).multiplyScalar(1.8), [design.worker.accent]);
 
@@ -100,6 +97,9 @@ export function TradingTower({ design, showLabels }: { design: TowerDesign; show
         onClick={onClick}
         onDoubleClick={(e) => {
           e.stopPropagation();
+          const ui = getUi();
+          // Hidden city meshes still raycast while the station is shown.
+          if (ui.scene !== 'city' || ui.transition) return;
           takeManualControl();
           goToScene('station', id);
         }}

@@ -49,4 +49,3 @@ export function useSimulationLoop(): void {
     return () => cancelAnimationFrame(raf);
   }, []);
 }
-

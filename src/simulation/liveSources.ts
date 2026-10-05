@@ -21,12 +21,27 @@ import type {
 } from '../types/trading';
 import { useSim } from './simulationStore';
 
-const STATUSES: readonly WorkerStatus[] = ['watching', 'scanning', 'charging', 'ready', 'firing', 'managing', 'trailing', 'cooldown', 'off-duty'];
+const STATUSES: readonly WorkerStatus[] = [
+  'watching',
+  'scanning',
+  'charging',
+  'ready',
+  'firing',
+  'managing',
+  'trailing',
+  'cooldown',
+  'off-duty',
+];
 const TICKERS: readonly Ticker[] = ['QQQ', 'SPY', 'IWM'];
 
 type Raw = Record<string, unknown>;
 
-const num = (v: unknown, fallback = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : fallback);
+const num = (v: unknown, fallback = 0): number =>
+  typeof v === 'number' && Number.isFinite(v)
+    ? v
+    : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))
+      ? Number(v)
+      : fallback;
 const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
 const pick = (o: Raw, ...keys: string[]): unknown => {
   for (const k of keys) if (o[k] !== undefined) return o[k];
@@ -79,24 +94,35 @@ export function normalizeEvent(input: unknown): BotEvent | null {
       };
     }
     case 'CLOCK':
-      return { type: 'CLOCK', dayIndex: num(pick(o, 'dayIndex', 'day_index'), t.dayIndex), minute: num(o.minute, t.minute), finished: o.finished === true };
+      return {
+        type: 'CLOCK',
+        dayIndex: num(pick(o, 'dayIndex', 'day_index'), t.dayIndex),
+        minute: num(o.minute, t.minute),
+        finished: o.finished === true,
+      };
     case 'SESSION': {
       const phase = str(o.phase) === 'close' ? 'close' : 'open';
       return { type: 'SESSION', dayIndex: num(pick(o, 'dayIndex', 'day_index'), t.dayIndex), phase };
     }
     case 'MARKET_TICK': {
       const tk = ticker(o.ticker);
-      if (!tk) return null;
-      return { type: 'MARKET_TICK', ticker: tk, timestamp: num(o.timestamp, t.timestamp), price: num(o.price) };
+      const price = num(o.price);
+      if (!tk || !(price > 0)) return null;
+      return { type: 'MARKET_TICK', ticker: tk, timestamp: num(o.timestamp, t.timestamp), price };
     }
     case 'MARKET_BAR': {
       const tk = ticker(o.ticker);
       const p = (o.point ?? o) as Raw;
-      if (!tk) return null;
+      if (!tk || !(num(p.price) > 0)) return null;
       return {
         type: 'MARKET_BAR',
         ticker: tk,
-        point: { timestamp: num(p.timestamp, t.timestamp), price: num(p.price), vwap: num(p.vwap, num(p.price)), ema50: num(pick(p, 'ema50', 'ema_50'), num(p.price)) },
+        point: {
+          timestamp: num(p.timestamp, t.timestamp),
+          price: num(p.price),
+          vwap: num(p.vwap, num(p.price)),
+          ema50: num(pick(p, 'ema50', 'ema_50'), num(p.price)),
+        },
       };
     }
     case 'BOT_STATUS': {
@@ -231,7 +257,9 @@ export class MarketTickSource implements BotEventSource {
 
   subscribe(listener: (events: BotEvent[]) => void): () => void {
     const unsubs = this.tickers.map((tk) =>
-      this.provider.subscribe(tk, (tick: MarketTick) => listener([{ type: 'MARKET_TICK', ticker: tick.ticker, timestamp: tick.timestamp, price: tick.price }])),
+      this.provider.subscribe(tk, (tick: MarketTick) =>
+        listener([{ type: 'MARKET_TICK', ticker: tick.ticker, timestamp: tick.timestamp, price: tick.price }]),
+      ),
     );
     return () => unsubs.forEach((u) => u());
   }

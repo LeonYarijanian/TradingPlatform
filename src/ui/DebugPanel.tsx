@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { openSummary, resetSimulation } from '../app/actions';
 import { takeManualControl } from '../app/transitions';
 import { useUi } from '../app/uiStore';
@@ -14,11 +15,27 @@ export function DebugPanel() {
   const selected = useUi((s) => s.selectedWorkerId);
   const scene = useUi((s) => s.scene);
   const station = useUi((s) => s.stationWorkerId);
+  const live = useUi((s) => s.live);
+  const [notice, setNotice] = useState<string | null>(null);
   if (!open) return null;
-  const target: WorkerId = scene === 'station' ? station : selected ?? 'qqq';
+  if (live) {
+    return (
+      <section className="debug-panel" aria-label="Simulation controls">
+        <header>
+          <span>SIM CONTROLS</span>
+          <button type="button" className="icon-btn" onClick={() => useUi.setState({ debugOpen: false })} aria-label="Close">
+            ✕
+          </button>
+        </header>
+        <p className="dp-hint">Live feed connected — demo controls are disabled.</p>
+      </section>
+    );
+  }
+  const target: WorkerId = scene === 'station' ? station : (selected ?? 'qqq');
   const trigger = (dir: OptionDirection) => {
     takeManualControl();
-    injectSignal(target, dir);
+    const result = injectSignal(target, dir);
+    setNotice(result.ok ? null : `${result.reason} — try another worker or a moment later`);
   };
   return (
     <section className="debug-panel" aria-label="Simulation controls">
@@ -107,6 +124,11 @@ export function DebugPanel() {
           Show Summary
         </button>
       </div>
+      {notice && (
+        <p className="dp-notice" role="status">
+          {notice}
+        </p>
+      )}
       <p className="dp-hint">Space pause · 1-5 workers · ←/→ cycle · Enter station · Esc back · M sound · R camera</p>
     </section>
   );

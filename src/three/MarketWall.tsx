@@ -6,7 +6,7 @@ import { SESSION_MINUTES } from '../data/demoRun';
 import { WORKER_BY_ID } from '../data/workers';
 import { formatPercent, formatPrice } from '../simulation/pnl';
 import { getSim, marketBuffer } from '../simulation/simulationStore';
-import type { Ticker } from '../types/trading';
+import type { ChartMarker, MarketPoint, Ticker } from '../types/trading';
 import { FONT_MONO } from './fonts';
 import { hdr, PALETTE, SIGNAL_COLORS } from './palette';
 import { NO_RAYCAST } from './WindowsMesh';
@@ -115,7 +115,13 @@ function buildGrid() {
 }
 
 /** Floating price tag (DOM) — text is written directly for 60fps updates. */
-function PriceTag({ ticker, refs }: { ticker: Ticker; refs: { price: React.RefObject<HTMLSpanElement | null>; chg: React.RefObject<HTMLSpanElement | null> } }) {
+function PriceTag({
+  ticker,
+  refs,
+}: {
+  ticker: Ticker;
+  refs: { price: React.RefObject<HTMLSpanElement | null>; chg: React.RefObject<HTMLSpanElement | null> };
+}) {
   return (
     <div className="wall-tag">
       <span className="wt-sym">{ticker}</span>
@@ -176,6 +182,15 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
   const headLabelRef = useRef<THREE.Group>(null);
 
   const range = useRef({ lo: 0, hi: 0, day: -1 });
+  // Reused every frame so the render loop doesn't allocate.
+  const scratchRef = useRef({
+    pts: [] as MarketPoint[],
+    us: [] as number[],
+    ys: [] as number[],
+    vus: [] as number[],
+    vys: [] as number[],
+    markers: [] as ChartMarker[],
+  });
   const tags = {
     QQQ: { price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
     SPY: { price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
@@ -205,7 +220,8 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     const day = sim.clock.dayIndex;
     const dayStart = day * SESSION_MINUTES;
     const now = dayStart + sim.clock.minute;
-    const pts = marketBuffer.window(TICKER, dayStart, dayStart + SESSION_MINUTES - 1);
+    const scratch = scratchRef.current;
+    const pts = marketBuffer.window(TICKER, dayStart, dayStart + SESSION_MINUTES - 1, scratch.pts);
     const live = sim.prices[TICKER].price;
 
     // Smoothed vertical range for the current session.
@@ -238,10 +254,8 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     const yOf = (price: number) => WALL.chartY0 + ((price - r.lo) / Math.max(0.01, r.hi - r.lo)) * (WALL.chartY1 - WALL.chartY0);
     const uOf = (ts: number) => CHART_U0 + (CHART_U1 - CHART_U0) * Math.min(1, Math.max(0, (ts - dayStart) / SESSION_MINUTES));
 
-    const us: number[] = [];
-    const ys: number[] = [];
-    const vus: number[] = [];
-    const vys: number[] = [];
+    const { us, ys, vus, vys } = scratch;
+    us.length = ys.length = vus.length = vys.length = 0;
     for (const p of pts) {
       us.push(uOf(p.timestamp));
       ys.push(yOf(p.price));
@@ -270,7 +284,14 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     if (headLabelRef.current) headLabelRef.current.position.set(hx, hy + 1.6, hz);
 
     // Trade entry nodes + vertical marker lines for QQQ workers.
-    const markers = sim.markers.filter((m) => m.kind === 'entry' && m.timestamp >= dayStart && WORKER_BY_ID[m.workerId].ticker === TICKER).slice(-MAX_MARKERS);
+    // Walk backwards (markers are chronological) collecting today's entries.
+    const markers = scratch.markers;
+    markers.length = 0;
+    for (let i = sim.markers.length - 1; i >= 0 && markers.length < MAX_MARKERS; i--) {
+      const m = sim.markers[i];
+      if (m.timestamp < dayStart) break;
+      if (m.kind === 'entry' && WORKER_BY_ID[m.workerId].ticker === TICKER) markers.push(m);
+    }
     const nodes = nodesRef.current;
     const mpos = markerLines.geo.attributes.position as THREE.BufferAttribute;
     const mcol = markerLines.geo.attributes.color as THREE.BufferAttribute;

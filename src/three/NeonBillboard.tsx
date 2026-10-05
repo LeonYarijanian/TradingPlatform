@@ -25,7 +25,12 @@ export function NeonBillboard({ text, color, position, rotationY = 0, width, hei
     () => ({
       panel: new THREE.MeshBasicMaterial({ color: '#030209', fog: false }),
       border: new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(2.6), fog: false }),
-      inner: new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.9), transparent: true, opacity: 0.5, fog: false }),
+      inner: new THREE.MeshBasicMaterial({
+        color: new THREE.Color(color).multiplyScalar(0.9),
+        transparent: true,
+        opacity: 0.5,
+        fog: false,
+      }),
       text: new THREE.MeshBasicMaterial({ color: new THREE.Color('#f6f4ff').multiplyScalar(1.55), fog: false }),
       pole: new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.55), fog: false }),
       glow: new THREE.MeshBasicMaterial({

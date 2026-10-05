@@ -1,14 +1,5 @@
 import { WORKERS, WORKER_BY_ID } from '../data/workers';
-import type {
-  BotEvent,
-  ChartMarker,
-  LogEntry,
-  LogTone,
-  OptionDirection,
-  Ticker,
-  WorkerId,
-  WorkerRuntime,
-} from '../types/trading';
+import type { BotEvent, ChartMarker, LogEntry, LogTone, OptionDirection, Ticker, WorkerId, WorkerRuntime } from '../types/trading';
 import { formatMoney } from './pnl';
 
 export interface DayRuntime {
@@ -182,9 +173,10 @@ export function reduceEvents(state: SimData, events: readonly BotEvent[]): SimDa
     return all[id];
   };
   const setPrice = (ticker: Ticker, price: number, timestamp: number) => {
+    if (!(price > 0)) return;
     const prices = touch('prices');
     const prev = prices[ticker];
-    const dayOpen = Number.isNaN(prev.dayOpen) ? price : prev.dayOpen;
+    const dayOpen = prev.dayOpen > 0 ? prev.dayOpen : price;
     prices[ticker] = { price, dayOpen, changePct: ((price - dayOpen) / dayOpen) * 100, timestamp };
   };
 
@@ -247,7 +239,7 @@ export function reduceEvents(state: SimData, events: readonly BotEvent[]): SimDa
         setPrice(ev.ticker, ev.price, ev.timestamp);
         break;
       case 'MARKET_BAR':
-        if (Number.isNaN(s.prices[ev.ticker].dayOpen)) setPrice(ev.ticker, ev.point.price, ev.point.timestamp);
+        if (!(s.prices[ev.ticker].dayOpen > 0)) setPrice(ev.ticker, ev.point.price, ev.point.timestamp);
         break;
       case 'BOT_STATUS': {
         const rt = worker(ev.workerId);
@@ -296,7 +288,8 @@ export function reduceEvents(state: SimData, events: readonly BotEvent[]): SimDa
         rt.earned += ev.pnl;
         rt.todayPnl += ev.pnl;
         rt.lastPnl = ev.pnl;
-        rt.position = null;
+        // Only flatten the position this close belongs to (live feeds may interleave trades).
+        if (!rt.position || rt.position.tradeId === ev.tradeId) rt.position = null;
         if (ev.pnl >= 0) rt.wins += 1;
         else rt.losses += 1;
         s.vault += ev.pnl;

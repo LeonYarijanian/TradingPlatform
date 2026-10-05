@@ -22,8 +22,8 @@ export function stepSimulation(realSeconds: number, speed: number): void {
   engine.advance(realSeconds * BASE_MINUTES_PER_SECOND * speed);
 }
 
-export function injectSignal(workerId: WorkerId, direction: OptionDirection): void {
-  engine.inject(workerId, direction);
+export function injectSignal(workerId: WorkerId, direction: OptionDirection): { ok: true } | { ok: false; reason: string } {
+  return engine.inject(workerId, direction);
 }
 
 export function endDay(): void {

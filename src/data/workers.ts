@@ -64,9 +64,10 @@ export const WORKERS: readonly WorkerConfig[] = [
 
 export const WORKER_IDS: readonly WorkerId[] = WORKERS.map((w) => w.id);
 
-export const WORKER_BY_ID: Record<WorkerId, WorkerConfig> = Object.fromEntries(
-  WORKERS.map((w) => [w.id, w]),
-) as Record<WorkerId, WorkerConfig>;
+export const WORKER_BY_ID: Record<WorkerId, WorkerConfig> = Object.fromEntries(WORKERS.map((w) => [w.id, w])) as Record<
+  WorkerId,
+  WorkerConfig
+>;
 
 export function workerByHotkey(key: number): WorkerConfig | undefined {
   return WORKERS.find((w) => w.hotkey === key);

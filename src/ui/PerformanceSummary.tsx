@@ -13,6 +13,7 @@ type Phase = 'closed' | 'opening' | 'open' | 'closing';
 /** Centered results screen over the blurred, still-living city. */
 export function PerformanceSummary() {
   const open = useUi((s) => s.summaryOpen);
+  const live = useUi((s) => s.live);
   const [phase, setPhase] = useState<Phase>('closed');
   const [snapshot, setSnapshot] = useState(() => takeSnapshot());
   const [countTo, setCountTo] = useState(0);
@@ -87,9 +88,11 @@ export function PerformanceSummary() {
         <WorkerLeaderboard rows={summary.leaderboard.slice(0, 3)} />
 
         <div className="sm-actions">
-          <button type="button" className="violet-btn" onClick={() => replay()}>
-            ↻ Replay
-          </button>
+          {!live && (
+            <button type="button" className="violet-btn" onClick={() => replay()}>
+              ↻ Replay
+            </button>
+          )}
           <button type="button" className="violet-btn" ref={closeRef} onClick={() => closeSummary()}>
             Close
           </button>

@@ -14,7 +14,9 @@ function clearTimers() {
 
 export function goToScene(to: SceneId, workerId?: WorkerId | null, opts: { instant?: boolean } = {}): void {
   const ui = getUi();
-  const nextWorker = workerId ?? ui.stationWorkerId;
+  const nextWorker = workerId ?? ui.transition?.workerId ?? ui.stationWorkerId;
+  // Already heading there: don't restart the fly-out (e.g. key repeat).
+  if (ui.transition && ui.transition.to === to && (to === 'city' || ui.transition.workerId === nextWorker)) return;
   const sameScene = ui.scene === to && (to === 'city' || nextWorker === ui.stationWorkerId);
   if (sameScene && !ui.transition) return;
   clearTimers();
@@ -22,9 +24,7 @@ export function goToScene(to: SceneId, workerId?: WorkerId | null, opts: { insta
   if (typeof document !== 'undefined') document.body.style.cursor = '';
 
   const patchFor = (): Partial<ReturnType<typeof getUi>> =>
-    to === 'station'
-      ? { scene: 'station', stationWorkerId: nextWorker, hoveredWorkerId: null }
-      : { scene: 'city', hoveredWorkerId: null };
+    to === 'station' ? { scene: 'station', stationWorkerId: nextWorker, hoveredWorkerId: null } : { scene: 'city', hoveredWorkerId: null };
 
   if (opts.instant) {
     useUi.setState({ ...patchFor(), transition: null });
@@ -44,6 +44,18 @@ export function goToScene(to: SceneId, workerId?: WorkerId | null, opts: { insta
       timers.push(window.setTimeout(() => useUi.setState({ transition: null }), TRANSITION_IN_MS));
     }, TRANSITION_OUT_MS),
   );
+}
+
+/** The worker the station shows, or is about to show mid-transition. */
+export function pendingStationWorker(): WorkerId {
+  const ui = getUi();
+  return ui.transition?.to === 'station' && ui.transition.workerId ? ui.transition.workerId : ui.stationWorkerId;
+}
+
+/** The scene we are in, or heading to. */
+export function effectiveScene(): SceneId {
+  const ui = getUi();
+  return ui.transition?.to ?? ui.scene;
 }
 
 /** Focus a worker in the city (camera tween + detail card). */

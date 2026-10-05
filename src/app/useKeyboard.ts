@@ -4,7 +4,7 @@ import { engine } from '../simulation/controller';
 import { usePlayback } from '../simulation/simulationStore';
 import { closeSummary, openSummary, replay } from './actions';
 import { audio } from './audio';
-import { goToScene, resetCamera, selectWorker, takeManualControl } from './transitions';
+import { effectiveScene, goToScene, pendingStationWorker, resetCamera, selectWorker, takeManualControl } from './transitions';
 import { getUi, useUi } from './uiStore';
 
 function isTyping(target: EventTarget | null): boolean {
@@ -18,14 +18,17 @@ export function useKeyboard(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      // Held keys shouldn't hammer scene changes.
+      if (e.repeat && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       const ui = getUi();
+      const scene = effectiveScene();
       const onButton = (e.target as HTMLElement | null)?.tagName === 'BUTTON';
 
       switch (e.key) {
         case 'Escape':
           if (ui.summaryOpen) closeSummary();
           else if (ui.debugOpen) useUi.setState({ debugOpen: false });
-          else if (ui.scene === 'station') {
+          else if (scene === 'station') {
             takeManualControl();
             goToScene('city');
           } else if (ui.selectedWorkerId) {
@@ -40,7 +43,7 @@ export function useKeyboard(): void {
           return;
         case 'Enter':
           if (onButton) return;
-          if (ui.scene === 'city' && ui.selectedWorkerId) {
+          if (scene === 'city' && ui.selectedWorkerId) {
             takeManualControl();
             goToScene('station', ui.selectedWorkerId);
           }
@@ -49,10 +52,10 @@ export function useKeyboard(): void {
         case 'ArrowRight': {
           takeManualControl();
           const delta = e.key === 'ArrowLeft' ? -1 : 1;
-          const current = ui.scene === 'station' ? ui.stationWorkerId : ui.selectedWorkerId;
+          const current = scene === 'station' ? pendingStationWorker() : ui.selectedWorkerId;
           const idx = current ? WORKERS.findIndex((w) => w.id === current) : delta > 0 ? -1 : 0;
           const next = WORKERS[(idx + delta + WORKERS.length) % WORKERS.length];
-          if (ui.scene === 'station') goToScene('station', next.id);
+          if (scene === 'station') goToScene('station', next.id);
           else selectWorker(next.id);
           return;
         }
@@ -77,6 +80,7 @@ export function useKeyboard(): void {
           return;
         case 'a':
         case 'A':
+          if (ui.live) return;
           if (ui.autoDemo) useUi.setState({ autoDemo: false });
           else if (engine.finished) replay();
           else useUi.setState({ autoDemo: true });
@@ -90,7 +94,7 @@ export function useKeyboard(): void {
           const w = Number.isInteger(n) ? workerByHotkey(n) : undefined;
           if (!w) return;
           takeManualControl();
-          if (ui.scene === 'station') goToScene('station', w.id);
+          if (scene === 'station') goToScene('station', w.id);
           else selectWorker(w.id);
         }
       }

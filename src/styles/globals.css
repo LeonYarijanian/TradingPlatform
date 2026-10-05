@@ -973,8 +973,13 @@ kbd {
   z-index: 40;
   pointer-events: none;
   opacity: 0;
-  background:
-    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.95) 0%, rgba(205, 190, 255, 0.85) 18%, rgba(110, 60, 255, 0.55) 45%, rgba(8, 4, 30, 0.9) 100%);
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(205, 190, 255, 0.85) 18%,
+    rgba(110, 60, 255, 0.55) 45%,
+    rgba(8, 4, 30, 0.9) 100%
+  );
   mix-blend-mode: screen;
 }
 .transition-flash.phase-out {
@@ -1267,6 +1272,11 @@ kbd {
   font-family: var(--font-mono);
   font-size: 11px;
 }
+.dp-notice {
+  margin: 2px 0 6px;
+  color: #ff9fbd;
+  font-size: 10px;
+}
 .dp-hint {
   margin: 6px 0 0;
   color: var(--text-faint);
@@ -1356,14 +1366,14 @@ kbd {
     right: var(--gutter);
   }
   .hud-live {
-  margin-left: 8px;
-  font-style: normal;
-  font-size: 10px;
-  color: var(--red);
-  animation: blink 1.4s infinite;
-}
+    margin-left: 8px;
+    font-style: normal;
+    font-size: 10px;
+    color: var(--red);
+    animation: blink 1.4s infinite;
+  }
 
-.hud-chips {
+  .hud-chips {
     flex-direction: row;
     width: auto;
     overflow-x: auto;

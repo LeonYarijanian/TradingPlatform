@@ -1,10 +1,9 @@
-import { goToScene, takeManualControl } from '../app/transitions';
+import { goToScene, pendingStationWorker, takeManualControl } from '../app/transitions';
 import { useUi } from '../app/uiStore';
 import { WORKERS, WORKER_BY_ID } from '../data/workers';
 
 function cycleStation(delta: number) {
-  const ui = useUi.getState();
-  const idx = WORKERS.findIndex((w) => w.id === ui.stationWorkerId);
+  const idx = WORKERS.findIndex((w) => w.id === pendingStationWorker());
   takeManualControl();
   goToScene('station', WORKERS[(idx + delta + WORKERS.length) % WORKERS.length].id);
 }

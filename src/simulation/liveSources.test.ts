@@ -21,8 +21,18 @@ describe('live event parsing', () => {
   });
 
   it('accepts snake_case keys from a Python bot', () => {
-    const [e] = parseMessage('{"type":"trade_executed","worker_id":"spy","ticker":"spy","direction":"put","contracts":"5","entry_price":2.4,"underlying_price":760.1}');
-    expect(e).toMatchObject({ type: 'TRADE_EXECUTED', workerId: 'spy', ticker: 'SPY', direction: 'PUT', contracts: 5, entry: 2.4, underlying: 760.1 });
+    const [e] = parseMessage(
+      '{"type":"trade_executed","worker_id":"spy","ticker":"spy","direction":"put","contracts":"5","entry_price":2.4,"underlying_price":760.1}',
+    );
+    expect(e).toMatchObject({
+      type: 'TRADE_EXECUTED',
+      workerId: 'spy',
+      ticker: 'SPY',
+      direction: 'PUT',
+      contracts: 5,
+      entry: 2.4,
+      underlying: 760.1,
+    });
   });
 
   it('drops malformed or unknown messages instead of throwing', () => {

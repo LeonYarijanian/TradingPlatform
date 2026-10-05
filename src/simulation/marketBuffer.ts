@@ -25,8 +25,8 @@ export class MarketBuffer {
     return this.data[ticker];
   }
 
-  /** Points with timestamp in [from, to]. */
-  window(ticker: Ticker, from: number, to = Infinity): MarketPoint[] {
+  /** Points with timestamp in [from, to]. Pass `out` to reuse an array in render loops. */
+  window(ticker: Ticker, from: number, to = Infinity, out: MarketPoint[] = []): MarketPoint[] {
     const list = this.data[ticker];
     let lo = 0;
     let hi = list.length;
@@ -35,7 +35,7 @@ export class MarketBuffer {
       if (list[mid].timestamp < from) lo = mid + 1;
       else hi = mid;
     }
-    const out: MarketPoint[] = [];
+    out.length = 0;
     for (let i = lo; i < list.length && list[i].timestamp <= to; i++) out.push(list[i]);
     return out;
   }

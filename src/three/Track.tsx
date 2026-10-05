@@ -41,7 +41,11 @@ export function Track() {
       const yaw = Math.atan2(tan.x, tan.z);
       if (i % 2 === 0) {
         supports.push(
-          new THREE.Matrix4().compose(new THREE.Vector3(p.x, TRACK.y / 2 - 0.04, p.z), new THREE.Quaternion(), new THREE.Vector3(0.05, TRACK.y - 0.08, 0.05)),
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(p.x, TRACK.y / 2 - 0.04, p.z),
+            new THREE.Quaternion(),
+            new THREE.Vector3(0.05, TRACK.y - 0.08, 0.05),
+          ),
         );
       }
       ties.push(

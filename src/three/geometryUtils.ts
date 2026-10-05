@@ -52,16 +52,7 @@ function windowColor(rng: Rng, warm: number, brightness: number): [number, numbe
 
 /** Lays out tiny lit windows over the four faces of each box. */
 export function buildWindowInstances(boxes: BoxSpec[], seed: number, opts: WindowOptions = {}): WindowInstances {
-  const {
-    pitchX = 0.15,
-    pitchY = 0.19,
-    fillX = 0.55,
-    fillY = 0.55,
-    brightness = 1,
-    litScale = 1,
-    warm = 0.08,
-    skipBack = false,
-  } = opts;
+  const { pitchX = 0.15, pitchY = 0.19, fillX = 0.55, fillY = 0.55, brightness = 1, litScale = 1, warm = 0.08, skipBack = false } = opts;
   const rng = createRng(seed);
   const matrices: number[] = [];
   const colors: number[] = [];

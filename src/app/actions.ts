@@ -6,6 +6,11 @@ import { useUi } from './uiStore';
 
 /** Full replay: reset trading state, market timeline and workers, then rerun the auto demo. */
 export function replay(): void {
+  // In live mode the backend owns the state; replaying the demo would wipe it.
+  if (useUi.getState().live) {
+    useUi.setState({ summaryOpen: false });
+    return;
+  }
   useUi.setState({ summaryOpen: false, selectedWorkerId: null });
   resetRun();
   usePlayback.setState({ playing: true });
@@ -15,6 +20,7 @@ export function replay(): void {
 
 /** Reset without restarting the auto demo (debug panel). */
 export function resetSimulation(): void {
+  if (useUi.getState().live) return;
   useUi.setState({ summaryOpen: false });
   demoDirector.stop();
   useUi.setState({ autoDemo: false });

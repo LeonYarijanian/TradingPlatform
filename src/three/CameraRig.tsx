@@ -14,6 +14,8 @@ interface View {
   target: THREE.Vector3;
 }
 
+const UP = new THREE.Vector3(0, 1, 0);
+
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const easeIn = (t: number) => t * t * t;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -60,10 +62,11 @@ function stationPushIn(): View {
 }
 
 /** Orbit clamps per scene: no flipping under the city, no losing the desk. */
-function applyLimits(c: OrbitControlsImpl, scene: 'city' | 'station'): void {
+function applyLimits(c: OrbitControlsImpl, scene: 'city' | 'station', aspect: number): void {
   if (scene === 'city') {
     c.minDistance = 5;
-    c.maxDistance = 46;
+    // Portrait screens frame the city from further back; allow that distance.
+    c.maxDistance = 46 * aspectFactor(aspect);
     c.minPolarAngle = 0.5;
     c.maxPolarAngle = 1.42;
     c.minAzimuthAngle = -0.85;
@@ -104,6 +107,10 @@ export function CameraRig() {
   const resetSeq = useUi((s) => s.cameraResetSeq);
   const transition = useUi((s) => s.transition);
   const aspect = size.width / Math.max(1, size.height);
+  const aspectRef = useRef(aspect);
+  aspectRef.current = aspect;
+  /** False while a tween runs or the user steers; drift re-baselines when it resumes. */
+  const drifting = useRef(false);
 
   const current = (): View => ({
     position: camera.position.clone(),
@@ -120,7 +127,7 @@ export function CameraRig() {
     const v = sc === 'station' ? stationView(aspect) : cityDefault(aspect);
     camera.position.copy(v.position);
     if (controls.current) {
-      applyLimits(controls.current, sc);
+      applyLimits(controls.current, sc, aspect);
       controls.current.target.copy(v.target);
       controls.current.update();
     }
@@ -159,7 +166,7 @@ export function CameraRig() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transition?.phase, transition?.to]);
+  }, [transition?.phase, transition?.to, transition?.startedAt]);
 
   // Instant scene switches (no transition) snap straight to that scene's framing.
   const lastScene = useRef(scene);
@@ -171,7 +178,7 @@ export function CameraRig() {
     tween.current = null;
     camera.position.copy(v.position);
     if (controls.current) {
-      applyLimits(controls.current, scene);
+      applyLimits(controls.current, scene, aspect);
       controls.current.target.copy(v.target);
       controls.current.update();
     }
@@ -214,8 +221,8 @@ export function CameraRig() {
 
   // Orbit limits per scene.
   useEffect(() => {
-    if (controls.current) applyLimits(controls.current, scene);
-  }, [scene]);
+    if (controls.current) applyLimits(controls.current, scene, aspect);
+  }, [scene, aspect]);
 
   useFrame((state) => {
     const c = controls.current;
@@ -228,10 +235,11 @@ export function CameraRig() {
       c.target.lerpVectors(tw.from.target, tw.to.target, e);
       c.enabled = !tw.locked;
       camera.lookAt(c.target);
+      drifting.current = false;
       if (k >= 1) {
         tween.current = null;
         c.enabled = true;
-        applyLimits(c, getUi().scene);
+        applyLimits(c, getUi().scene, aspectRef.current);
         c.update();
       }
       return;
@@ -240,32 +248,30 @@ export function CameraRig() {
 
     // Idle drift: slow azimuth sway + tiny bob, only when the user isn't steering.
     const ui = getUi();
-    const idle = state.clock.elapsedTime - lastInteraction.current > 3.5 || ui.autoDemo;
+    const nowSec = performance.now() / 1000;
+    const idle = nowSec - lastInteraction.current > 3.5 || ui.autoDemo;
     if (!ui.reducedMotion && idle) {
       const t = state.clock.elapsedTime;
       const amp = ui.scene === 'city' ? (ui.autoDemo ? 0.11 : 0.06) : 0.035;
       const angle = Math.sin(t * 0.11) * amp;
-      const delta = angle - drift.current.angle;
-      drift.current.angle = angle;
-      const offset = camera.position.clone().sub(c.target);
-      offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), delta);
       const bob = Math.sin(t * 0.23) * (ui.scene === 'city' ? 0.12 : 0.03);
-      offset.y += bob - drift.current.bob;
+      if (drifting.current) {
+        const offset = camera.position.clone().sub(c.target);
+        offset.applyAxisAngle(UP, angle - drift.current.angle);
+        offset.y += bob - drift.current.bob;
+        camera.position.copy(c.target).add(offset);
+      }
+      // Re-baseline after tweens/interaction so drift never jumps.
+      drift.current.angle = angle;
       drift.current.bob = bob;
-      camera.position.copy(c.target).add(offset);
+      drifting.current = true;
+    } else {
+      drifting.current = false;
     }
     c.update();
   });
 
   return (
-    <OrbitControls
-      ref={controls}
-      makeDefault
-      enableDamping
-      dampingFactor={0.08}
-      enablePan={false}
-      rotateSpeed={0.55}
-      zoomSpeed={0.7}
-    />
+    <OrbitControls ref={controls} makeDefault enableDamping dampingFactor={0.08} enablePan={false} rotateSpeed={0.55} zoomSpeed={0.7} />
   );
 }

@@ -14,10 +14,7 @@ import { NO_RAYCAST } from './WindowsMesh';
 
 /** Ground plane with a faint neon grid. */
 export function Ground() {
-  const material = useMemo(
-    () => createGridMaterial({ color: '#4a2bd8', base: '#04031a', scale: 1, fade: 60, lineWidth: 0.9 }),
-    [],
-  );
+  const material = useMemo(() => createGridMaterial({ color: '#4a2bd8', base: '#04031a', scale: 1, fade: 60, lineWidth: 0.9 }), []);
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]} material={material} raycast={NO_RAYCAST}>
       <planeGeometry args={[420, 420]} />
@@ -153,7 +150,14 @@ export function VaultFlows() {
   const last = useRef<Partial<Record<WorkerId, number>>>({});
   const material = useMemo(() => new THREE.MeshBasicMaterial({ color: hdr(PALETTE.green, 3.5) }), []);
   const trailMat = useMemo(
-    () => new THREE.MeshBasicMaterial({ color: hdr(PALETTE.green, 1.6), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }),
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: hdr(PALETTE.green, 1.6),
+        transparent: true,
+        opacity: 0.5,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
     [],
   );
   const target = useMemo(

@@ -11,16 +11,7 @@ export type WorkerId = 'qqq-og' | 'qqq-trend' | 'qqq' | 'spy' | 'iwm';
 
 export type Ticker = 'QQQ' | 'SPY' | 'IWM';
 
-export type WorkerStatus =
-  | 'watching'
-  | 'scanning'
-  | 'charging'
-  | 'ready'
-  | 'firing'
-  | 'managing'
-  | 'trailing'
-  | 'cooldown'
-  | 'off-duty';
+export type WorkerStatus = 'watching' | 'scanning' | 'charging' | 'ready' | 'firing' | 'managing' | 'trailing' | 'cooldown' | 'off-duty';
 
 export type OptionDirection = 'CALL' | 'PUT';
 

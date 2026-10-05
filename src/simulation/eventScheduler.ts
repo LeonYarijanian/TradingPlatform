@@ -133,10 +133,7 @@ export function buildDemoSchedule(seed: number = RUN_SEED): DemoSchedule {
       // 2. Split the day's realized P&L into individual trades.
       const pnls: number[] = [];
       if (cell > 0) {
-        const n = Math.max(
-          1,
-          Math.min(MAX_TRADES_PER_DAY[worker.id], Math.round((cell / AVG_TRADE_PNL[worker.id]) * (0.8 + wr() * 0.4))),
-        );
+        const n = Math.max(1, Math.min(MAX_TRADES_PER_DAY[worker.id], Math.round((cell / AVG_TRADE_PNL[worker.id]) * (0.8 + wr() * 0.4))));
         let loss = 0;
         if (n >= 2 && cell > 600 && wr() < 0.32) loss = int(wr, 48, Math.min(240, Math.floor(cell * 0.14)));
         const winners = loss > 0 ? n - 1 : n;

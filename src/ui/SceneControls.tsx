@@ -16,47 +16,52 @@ export function SceneControls() {
   const debugOpen = useUi((s) => s.debugOpen);
   const stationWorker = useUi((s) => s.stationWorkerId);
   const selected = useUi((s) => s.selectedWorkerId);
+  const live = useUi((s) => s.live);
 
   return (
     <nav className="scene-controls" aria-label="Scene controls">
-      <button
-        type="button"
-        className={`chip-btn demo ${autoDemo ? 'on' : ''}`}
-        aria-pressed={autoDemo}
-        onClick={() => {
-          if (autoDemo) useUi.setState({ autoDemo: false });
-          else if (engine.finished) replay();
-          else useUi.setState({ autoDemo: true });
-        }}
-        title="Auto demo (cinematic replay of the run)"
-      >
-        <i className="rec" /> AUTO DEMO
-      </button>
-      <div className="seg" role="group" aria-label="Playback">
+      {!live && (
         <button
           type="button"
-          className="seg-btn"
-          onClick={() => usePlayback.getState().togglePlaying()}
-          aria-label={playing ? 'Pause simulation (Space)' : 'Play simulation (Space)'}
+          className={`chip-btn demo ${autoDemo ? 'on' : ''}`}
+          aria-pressed={autoDemo}
+          onClick={() => {
+            if (autoDemo) useUi.setState({ autoDemo: false });
+            else if (engine.finished) replay();
+            else useUi.setState({ autoDemo: true });
+          }}
+          title="Auto demo (cinematic replay of the run)"
         >
-          {playing ? '❚❚' : '▶'}
+          <i className="rec" /> AUTO DEMO
         </button>
-        {SPEEDS.map((s) => (
+      )}
+      {!live && (
+        <div className="seg" role="group" aria-label="Playback">
           <button
-            key={s}
             type="button"
-            className={`seg-btn ${!autoDemo && speed === s ? 'on' : ''}`}
-            onClick={() => {
-              takeManualControl();
-              usePlayback.setState({ speed: s, playing: true });
-            }}
-            aria-label={`Speed ${s}x`}
+            className="seg-btn"
+            onClick={() => usePlayback.getState().togglePlaying()}
+            aria-label={playing ? 'Pause simulation (Space)' : 'Play simulation (Space)'}
           >
-            {s}x
+            {playing ? '❚❚' : '▶'}
           </button>
-        ))}
-        {autoDemo && <span className="seg-readout">{effective >= 10 ? Math.round(effective) : effective.toFixed(1)}x</span>}
-      </div>
+          {SPEEDS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={`seg-btn ${!autoDemo && speed === s ? 'on' : ''}`}
+              onClick={() => {
+                takeManualControl();
+                usePlayback.setState({ speed: s, playing: true });
+              }}
+              aria-label={`Speed ${s}x`}
+            >
+              {s}x
+            </button>
+          ))}
+          {autoDemo && <span className="seg-readout">{effective >= 10 ? Math.round(effective) : effective.toFixed(1)}x</span>}
+        </div>
+      )}
       <div className="seg" role="group" aria-label="View">
         <button
           type="button"

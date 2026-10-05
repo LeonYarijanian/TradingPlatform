@@ -126,19 +126,29 @@ export class SimulationEngine implements BotEventSource {
     return this.advance(target - this.time);
   }
 
-  /** Debug: force a worker to charge and fire a trade right now. */
-  inject(workerId: WorkerId, direction: OptionDirection): void {
-    if (this.finished) return;
+  /**
+   * Debug: force a worker to charge and fire a trade right now.
+   * Refused (with a reason) when the worker is off shift, already busy with a
+   * scheduled or manual setup, or there isn't time left in the session.
+   */
+  inject(workerId: WorkerId, direction: OptionDirection): { ok: true } | { ok: false; reason: string } {
+    if (this.finished) return { ok: false, reason: 'run finished' };
     const worker = WORKER_BY_ID[workerId];
     const rng = this.injectRng;
     const day = Math.min(this.schedule.calendar.length - 1, Math.floor(this.time / SESSION_MINUTES));
-    const dayEnd = (day + 1) * SESSION_MINUTES - 2;
+    if (day < this.schedule.onShiftDay[workerId]) return { ok: false, reason: `${worker.displayName} is off duty` };
     const start = this.time;
-    const charge = Math.min(10, Math.max(2, (dayEnd - start) * 0.4));
-    const hold = Math.min(9, Math.max(2, (dayEnd - start) * 0.45));
+    const charge = 7;
+    const hold = 7;
+    const cooldown = 2;
     const entry = start + charge;
     const exit = entry + hold;
-    const cooldown = 3;
+    const sessionEnd = Math.min((day + 1) * SESSION_MINUTES - 1, this.totalMinutes - 1);
+    if (exit + cooldown > sessionEnd) return { ok: false, reason: 'too close to the close' };
+    const busy = (segs: Segment[]) => segs.some((g) => g.start < exit + cooldown && g.end > start);
+    if (busy(this.overrides[workerId]) || busy(this.schedule.segments[workerId])) {
+      return { ok: false, reason: `${worker.displayName} is busy with a setup` };
+    }
     const contracts = int(rng, 5, 9);
     const premium = TICKER_PROFILES[worker.ticker].premium;
     const entryPrice = Math.round(range(rng, premium[0], premium[1]) * 100) / 100;
@@ -175,8 +185,8 @@ export class SimulationEngine implements BotEventSource {
     ];
     const rest = this.queue.slice(this.queueIndex).concat(items);
     this.queue = this.queue.slice(0, this.queueIndex).concat(sortQueue(rest));
+    return { ok: true };
   }
-
   /** Next scheduled (non-manual) fire strictly after `after`. Used by the auto-demo director. */
   findNextFire(after: number, workerFilter?: (id: WorkerId) => boolean): { workerId: WorkerId; time: number } | null {
     for (let i = this.queueIndex; i < this.queue.length; i++) {
@@ -277,7 +287,8 @@ export class SimulationEngine implements BotEventSource {
 
     while (this.queueIndex < this.queue.length && this.queue[this.queueIndex].t <= to) {
       const item = this.queue[this.queueIndex];
-      flushBarsUntil(item.t);
+      // A new session opens before its first bar so the day's open is bar 0.
+      flushBarsUntil(item.kind === 'session-open' ? item.t - 0.5 : item.t);
       this.queueIndex++;
       this.toEvents(item, out);
     }
@@ -288,7 +299,12 @@ export class SimulationEngine implements BotEventSource {
     out.push({ type: 'CLOCK', dayIndex: day, minute: finished ? SESSION_MINUTES : to - day * SESSION_MINUTES, finished });
 
     for (const ticker of TICKERS) {
-      out.push({ type: 'MARKET_TICK', ticker, timestamp: to, price: finished ? market.tickers[ticker].dayClose[day] : priceAt(market, ticker, to) });
+      out.push({
+        type: 'MARKET_TICK',
+        ticker,
+        timestamp: to,
+        price: finished ? market.tickers[ticker].dayClose[day] : priceAt(market, ticker, to),
+      });
     }
 
     for (const w of WORKERS) {
@@ -370,7 +386,10 @@ export class SimulationEngine implements BotEventSource {
           workerId: tr.workerId,
           dayIndex: item.dayIndex,
           minute: minuteOf(item.t),
-          text: tr.pnl >= 0 ? `trailing stop moved → ${Math.max(0.05, stop).toFixed(2)}` : `under water · stop held ${formatMoney(tr.pnl * 0.4)}`,
+          text:
+            tr.pnl >= 0
+              ? `trailing stop moved → ${Math.max(0.05, stop).toFixed(2)}`
+              : `under water · stop held ${formatMoney(tr.pnl * 0.4)}`,
           tone: tr.pnl >= 0 ? 'info' : 'warn',
         });
         return;

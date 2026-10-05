@@ -190,7 +190,9 @@ describe('simulation engine', () => {
     let state = reduceEvents(createInitialSimData(), engine.reset());
     state = reduceEvents(state, engine.advance(30));
     const before = state.vault;
-    engine.inject('qqq', 'PUT');
+    // Pick a worker that is idle right now (injection refuses busy workers).
+    const target = WORKERS.find((w) => engine.inject(w.id, 'PUT').ok);
+    expect(target).toBeDefined();
     let fired = false;
     let closed = 0;
     for (let i = 0; i < 40; i++) {
@@ -203,10 +205,30 @@ describe('simulation engine', () => {
     }
     expect(fired).toBe(true);
     expect(closed).not.toBe(0);
+    expect(state.workers[target!.id].position).toBeNull();
     const scheduled = schedule.trades
       .filter((t) => t.dayIndex === 0 && t.exitMinute > 30 && t.exitMinute <= 70)
       .reduce((a, t) => a + t.pnl, 0);
     expect(state.vault).toBe(before + scheduled + closed);
+  });
+
+  it('refuses injections that would overlap, cross the close or hit an off-duty worker', () => {
+    const engine = new SimulationEngine(schedule);
+    engine.reset();
+    expect(engine.inject('iwm', 'CALL').ok).toBe(false); // off duty on day 1
+    const trade = schedule.trades.find((t) => t.dayIndex === 0 && t.workerId === 'spy')!;
+    engine.advance(trade.chargeStartMinute + 1);
+    expect(engine.inject('spy', 'PUT').ok).toBe(false); // mid-charge
+    engine.advance(SESSION_MINUTES - engine.currentTime - 3);
+    for (const w of WORKERS) expect(engine.inject(w.id, 'CALL').ok).toBe(false); // too close to the close
+  });
+
+  it('only one manual setup per worker at a time', () => {
+    const engine = new SimulationEngine(schedule);
+    engine.reset();
+    engine.advance(30);
+    const w = WORKERS.find((x) => engine.inject(x.id, 'CALL').ok)!;
+    expect(engine.inject(w.id, 'PUT').ok).toBe(false);
   });
 
   it('resets cleanly for replay', () => {
@@ -246,8 +268,31 @@ describe('reducer', () => {
     s = reduceEvents(s, [
       { type: 'SESSION', dayIndex: 0, phase: 'open' },
       { type: 'BOT_STATUS', workerId: 'qqq-trend', status: 'charging', direction: 'CALL', charge: 68 },
-      { type: 'TRADE_EXECUTED', workerId: 'qqq-og', tradeId: 'x1', ticker: 'QQQ', direction: 'CALL', contracts: 7, entry: 3.53, underlying: 715.8, dayIndex: 0, minute: 106, timestamp: 106 },
-      { type: 'TRADE_CLOSED', workerId: 'qqq-og', tradeId: 'x1', pnl: 161, exit: 3.76, reason: 'trail', dayIndex: 0, minute: 113, timestamp: 113, underlying: 716.1 },
+      {
+        type: 'TRADE_EXECUTED',
+        workerId: 'qqq-og',
+        tradeId: 'x1',
+        ticker: 'QQQ',
+        direction: 'CALL',
+        contracts: 7,
+        entry: 3.53,
+        underlying: 715.8,
+        dayIndex: 0,
+        minute: 106,
+        timestamp: 106,
+      },
+      {
+        type: 'TRADE_CLOSED',
+        workerId: 'qqq-og',
+        tradeId: 'x1',
+        pnl: 161,
+        exit: 3.76,
+        reason: 'trail',
+        dayIndex: 0,
+        minute: 113,
+        timestamp: 113,
+        underlying: 716.1,
+      },
     ]);
     expect(s.workers['qqq-trend'].charge).toBe(68);
     expect(s.workers['qqq-og'].earned).toBe(161);
