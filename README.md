@@ -240,16 +240,18 @@ orders.
 
 ## Testing
 
-`npm test` runs four suites:
+`npm test` runs five suites:
 
 - **Simulation:** determinism; exact per-worker and per-day totals; the best day; a
   stronger last third; non-overlapping worker timelines; trade direction agreeing with
   the price move; a full replay through the reducer landing on +$72,074 at any step size;
-  the status lifecycle; injected trades; reset; end-day.
+  the status lifecycle; injected trades (and refusals when a worker is busy, off duty or
+  too close to the close); reset; end-day.
 - **Reducer:** immutability, and consuming live-style events.
 - **Auto-demo director:** the scene sequence and beats; a FIRE on camera during the
   workstation visit; finishing near 96 s; the summary opening; mid-run resume.
 - **Live parsing:** the documented payloads, snake_case input, and malformed input.
+- **Transitions:** fly-out → swap → settle, no restart on key repeat, redirect mid-flight.
 
 ## Notes
 
