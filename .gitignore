@@ -3,5 +3,5 @@ dist
 *.tsbuildinfo
 .vite
 coverage
-screenshots/
+/screenshots/
 .DS_Store
