@@ -69,6 +69,19 @@ kbd {
   touch-action: none;
 }
 
+.gl-restoring {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
 .label-layer-host,
 .label-layer {
   position: absolute;

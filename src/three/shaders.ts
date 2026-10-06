@@ -33,7 +33,8 @@ export function createAuraMaterial(): THREE.ShaderMaterial {
       varying vec3 vView;
       varying vec3 vLocal;
       void main() {
-        float f = 1.0 - abs(dot(normalize(vNormal), normalize(vView)));
+        // Clamp: rounding can push |dot| a hair above 1, and pow() of a negative is NaN on GPUs.
+        float f = clamp(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 0.0, 1.0);
         float rim = pow(f, 2.4);
         // Horizontal energy bands sliding upward.
         float bands = 0.5 + 0.5 * sin(vLocal.y * 14.0 - uTime * (2.0 + uCharge * 5.0));
@@ -95,7 +96,7 @@ export function createBeamMaterial(kind: 'core' | 'shell' | 'glow'): THREE.Shade
       void main() {
         float v = vUv.y;
         if (v > uGrow) discard;
-        float tip = smoothstep(uGrow, uGrow - 0.04, v);
+        float tip = 1.0 - smoothstep(uGrow - 0.04, uGrow, v);
         float fadeTop = 1.0 - smoothstep(0.35, 1.0, v);
         float fadeBottom = smoothstep(0.0, 0.015, v);
         float n = noise(vec2(vUv.x * 7.0, v * 38.0 - uTime * 7.0));
@@ -103,9 +104,10 @@ export function createBeamMaterial(kind: 'core' | 'shell' | 'glow'): THREE.Shade
         float scroll = mix(1.0, 0.55 + 0.75 * n * n2 * 1.6, uFlicker);
         float pulse = mix(1.0, 0.85 + 0.15 * sin(uTime * 22.0 + v * 30.0), uFlicker);
         float profile;
-        if (uKind < 0.5) profile = pow(vFacing, 0.6);
-        else if (uKind < 1.5) profile = pow(vFacing, 2.2) * 0.85;
-        else profile = pow(vFacing, 3.0) * 0.35;
+        float facing = clamp(vFacing, 0.0, 1.0);
+        if (uKind < 0.5) profile = pow(facing, 0.6);
+        else if (uKind < 1.5) profile = pow(facing, 2.2) * 0.85;
+        else profile = pow(facing, 3.0) * 0.35;
         float a = profile * fadeTop * fadeBottom * tip * uIntensity * scroll * pulse;
         gl_FragColor = vec4(uColor * a, 1.0);
       }
@@ -177,7 +179,7 @@ export function createSparkMaterial(): THREE.ShaderMaterial {
         p.y += k * (1.5 + fract(aSeed * 11.3) * 3.5);
         vAlpha = (t > 0.0 ? 1.0 : 0.0) * (1.0 - k) * smoothstep(0.0, 0.08, t);
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_PointSize = uSize * uPixelRatio * (0.4 + fract(aSeed * 2.3)) / -mv.z;
+        gl_PointSize = uSize * uPixelRatio * (0.4 + fract(aSeed * 2.3)) / max(-mv.z, 0.1);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -187,7 +189,7 @@ export function createSparkMaterial(): THREE.ShaderMaterial {
       void main() {
         vec2 c = gl_PointCoord - 0.5;
         float d = length(c);
-        float a = smoothstep(0.5, 0.0, d) * vAlpha;
+        float a = (1.0 - smoothstep(0.0, 0.5, d)) * vAlpha;
         gl_FragColor = vec4(uColor * a * 2.5, 1.0);
       }
     `,
@@ -240,10 +242,10 @@ export function createGridMaterial(opts: {
       #include <fog_pars_fragment>
       void main() {
         vec2 g = vWorld.xz / uScale;
-        vec2 grid = abs(fract(g - 0.5) - 0.5) / fwidth(g);
+        vec2 grid = abs(fract(g - 0.5) - 0.5) / max(fwidth(g), vec2(1e-4));
         float line = 1.0 - min(min(grid.x, grid.y) / uWidth, 1.0);
         vec2 g2 = vWorld.xz / (uScale * 5.0);
-        vec2 grid2 = abs(fract(g2 - 0.5) - 0.5) / fwidth(g2);
+        vec2 grid2 = abs(fract(g2 - 0.5) - 0.5) / max(fwidth(g2), vec2(1e-4));
         float major = 1.0 - min(min(grid2.x, grid2.y) / (uWidth * 1.4), 1.0);
         float dist = length(vWorld.xz - vec2(0.0, 2.0));
         float fade = 1.0 - smoothstep(uFade * 0.25, uFade, dist);
@@ -282,7 +284,10 @@ export function createSkyMaterial(top: string, horizon: string, glow: string): T
       void main() {
         float h = clamp(vDir.y, -0.2, 1.0);
         vec3 col = mix(uHorizon, uTop, smoothstep(-0.02, 0.55, h));
-        float band = exp(-pow((h - 0.04) * 9.0, 2.0));
+        // Square explicitly: pow() with a negative base is NaN on most GPUs, and bloom
+        // smears a single NaN pixel across the whole frame (the "random black screen").
+        float bandX = (h - 0.04) * 9.0;
+        float band = exp(-bandX * bandX);
         col += uGlow * band * 0.8;
         gl_FragColor = vec4(col, 1.0);
       }

@@ -60,7 +60,7 @@ export function ParticleField({ count = 320, bounds = DEFAULT_BOUNDS, color = '#
             p.x += sin(uTime * 0.3 + aSeed * 40.0) * 0.6;
             p.z += cos(uTime * 0.25 + aSeed * 23.0) * 0.6;
             vec4 mv = modelViewMatrix * vec4(p, 1.0);
-            gl_PointSize = uSize * uPixelRatio * (0.35 + aSeed * 0.8) / -mv.z;
+            gl_PointSize = uSize * uPixelRatio * (0.35 + aSeed * 0.8) / max(-mv.z, 0.1);
             vAlpha = 0.35 + 0.65 * (0.5 + 0.5 * sin(uTime * (1.0 + aSeed * 2.0) + aSeed * 30.0));
             gl_Position = projectionMatrix * mv;
           }
@@ -70,7 +70,7 @@ export function ParticleField({ count = 320, bounds = DEFAULT_BOUNDS, color = '#
           varying float vAlpha;
           void main() {
             float d = length(gl_PointCoord - 0.5);
-            float a = smoothstep(0.5, 0.0, d) * vAlpha;
+            float a = (1.0 - smoothstep(0.0, 0.5, d)) * vAlpha;
             gl_FragColor = vec4(uColor * a, 1.0);
           }
         `,

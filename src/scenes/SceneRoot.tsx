@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useUi } from '../app/uiStore';
 import { CameraRig } from '../three/CameraRig';
@@ -40,33 +40,68 @@ function ReadySignal() {
   return null;
 }
 
+/** How long to wait for the browser to restore a lost context before rebuilding the canvas. */
+const CONTEXT_RESTORE_TIMEOUT_MS = 2000;
+
 export function SceneRoot() {
   const scene = useUi((s) => s.scene);
   const lowPower = useUi((s) => s.lowPower);
+  // Bumping the key remounts the Canvas with a brand-new WebGL context. Trading
+  // state lives in the stores, so nothing is lost when that happens.
+  const [canvasKey, setCanvasKey] = useState(0);
+  const [contextLost, setContextLost] = useState(false);
+
+  useEffect(() => {
+    if (!contextLost) return;
+    const t = window.setTimeout(() => {
+      setContextLost(false);
+      setCanvasKey((k) => k + 1);
+    }, CONTEXT_RESTORE_TIMEOUT_MS);
+    return () => window.clearTimeout(t);
+  }, [contextLost]);
+
   return (
-    <Canvas
-      className="scene-canvas"
-      flat
-      dpr={[1, lowPower ? 1.25 : 1.5]}
-      gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
-      camera={{ fov: CITY_CAMERA.fov, near: 0.1, far: 600, position: CITY_CAMERA.position }}
-      onCreated={(state) => {
-        state.gl.setClearColor('#04030B');
-        if (import.meta.env.DEV) {
-          const w = window as unknown as { __ntc?: Record<string, unknown> };
-          if (w.__ntc) w.__ntc.three = state;
-        }
-      }}
-    >
-      <SceneAtmosphere />
-      <FxDriver />
-      <Suspense fallback={null}>
-        <TradingCityScene active={scene === 'city'} />
-        <WorkerStationScene active={scene === 'station'} />
-        <ReadySignal />
-      </Suspense>
-      <CameraRig />
-      <Effects />
-    </Canvas>
+    <>
+      <Canvas
+        key={canvasKey}
+        className="scene-canvas"
+        flat
+        dpr={[1, lowPower ? 1.25 : 1.5]}
+        gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
+        camera={{ fov: CITY_CAMERA.fov, near: 0.1, far: 600, position: CITY_CAMERA.position }}
+        onCreated={(state) => {
+          state.gl.setClearColor('#04030B');
+          const canvas = state.gl.domElement;
+          // A GPU reset or memory pressure can drop the context; without this the canvas stays black.
+          canvas.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            setContextLost(true);
+          });
+          canvas.addEventListener('webglcontextrestored', () => {
+            setContextLost(false);
+            setCanvasKey((k) => k + 1);
+          });
+          if (import.meta.env.DEV) {
+            const w = window as unknown as { __ntc?: Record<string, unknown> };
+            if (w.__ntc) w.__ntc.three = state;
+          }
+        }}
+      >
+        <SceneAtmosphere />
+        <FxDriver />
+        <Suspense fallback={null}>
+          <TradingCityScene active={scene === 'city'} />
+          <WorkerStationScene active={scene === 'station'} />
+          <ReadySignal />
+        </Suspense>
+        <CameraRig />
+        <Effects />
+      </Canvas>
+      {contextLost && (
+        <div className="gl-restoring" role="status">
+          Restoring graphics…
+        </div>
+      )}
+    </>
   );
 }
