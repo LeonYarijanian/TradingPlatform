@@ -12,10 +12,21 @@ export const WorkerStatusCard = memo(function WorkerStatusCard({ workerId }: { w
   const cfg = WORKER_BY_ID[workerId];
   const tone = statusTone(worker);
   const charge = worker.status === 'charging' || worker.status === 'ready' ? worker.charge : 0;
+  if (cfg.offline) {
+    return (
+      <div className="status-card tone-off is-offline" style={{ ['--accent' as string]: cfg.accent }}>
+        <div className="sc-name">{cfg.displayName}</div>
+        <div className="sc-status">OFFLINE · no bot connected</div>
+      </div>
+    );
+  }
   return (
     <div className={`status-card tone-${tone} st-${worker.status}`} style={{ ['--accent' as string]: cfg.accent }}>
       <PnlPopups workerId={workerId} />
-      <div className="sc-name">{cfg.displayName}</div>
+      <div className="sc-name">
+        {cfg.displayName}
+        {cfg.paper && <i className="paper-tag">PAPER</i>}
+      </div>
       <div className="sc-status">{statusLine(worker)}</div>
       {charge > 0 && (
         <div className="sc-bar">
@@ -65,9 +76,13 @@ export const TowerPlaque = memo(function TowerPlaque({ workerId }: { workerId: W
   const earned = useSim((s) => s.workers[workerId].earned);
   const cfg = WORKER_BY_ID[workerId];
   return (
-    <div className="tower-plaque">
+    <div className={`tower-plaque ${cfg.offline ? 'is-offline' : ''}`}>
       <div className="tp-name">{cfg.displayName}</div>
-      <CountUp value={earned} className={`tp-pnl ${earned < 0 ? 'neg' : 'pos'}`} />
+      {cfg.offline ? (
+        <div className="tp-pnl dim">OFFLINE</div>
+      ) : (
+        <CountUp value={earned} className={`tp-pnl ${earned < 0 ? 'neg' : 'pos'}`} />
+      )}
     </div>
   );
 });

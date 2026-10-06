@@ -1,6 +1,7 @@
 import { SESSION_MINUTES } from '../data/demoRun';
 import { WORKER_BY_ID } from '../data/workers';
-import { formatClock24, formatSessionTime } from '../simulation/calendar';
+import { LIVE_MODE } from '../live/mode';
+import { formatClock24, formatEtClock, formatSessionTime } from '../simulation/calendar';
 import { formatMoney, formatPrice } from '../simulation/pnl';
 import type { SimData } from '../simulation/reducer';
 import { marketBuffer } from '../simulation/simulationStore';
@@ -48,11 +49,15 @@ function scanlines(ctx: CanvasRenderingContext2D, w: number, h: number) {
 export function drawChartScreen(ctx: CanvasRenderingContext2D, w: number, h: number, sim: SimData, workerId: WorkerId, time: number): void {
   const cfg = WORKER_BY_ID[workerId];
   const ticker = cfg.ticker;
-  const dayStart = sim.clock.dayIndex * SESSION_MINUTES;
-  const now = dayStart + sim.clock.minute;
+  // Live: outside the session the chart parks on the last bars it has.
+  const focus = LIVE_MODE ? marketBuffer.focusDay(ticker, sim.clock.dayIndex, SESSION_MINUTES) : sim.clock.dayIndex;
+  const dayStart = focus * SESSION_MINUTES;
+  const inSession = focus === sim.clock.dayIndex && sim.clock.minute >= 0 && sim.clock.minute <= SESSION_MINUTES;
+  const lastBar = marketBuffer.last(ticker);
+  const now = !LIVE_MODE || inSession ? dayStart + sim.clock.minute : (lastBar?.timestamp ?? dayStart + SESSION_MINUTES);
   const span = 75;
   const pts = marketBuffer.window(ticker, now - span, now);
-  const live = sim.prices[ticker].price;
+  const live = !LIVE_MODE || inSession ? sim.prices[ticker].price : 0;
 
   ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, w, h);
@@ -66,14 +71,17 @@ export function drawChartScreen(ctx: CanvasRenderingContext2D, w: number, h: num
   ctx.font = `700 34px ${DISPLAY}`;
   ctx.fillStyle = C.text;
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${ticker} · 1-MIN · ${formatClock24(sim.clock.minute)}`, 34, 42);
+  const stamp = LIVE_MODE && !inSession ? `${formatClock24(now - dayStart)} · LAST SESSION` : formatClock24(now - dayStart);
+  ctx.fillText(`${ticker} · 1-MIN · ${stamp}`, 34, 42);
   ctx.font = `600 22px ${MONO}`;
   ctx.textAlign = 'right';
   ctx.fillStyle = C.ema;
   ctx.fillText('EMA50', w - 34, 42);
   const emaW = ctx.measureText('EMA50').width;
+  // Index charts (SPX) have no volume, so no VWAP.
+  const hasVwap = pts.some((p) => Number.isFinite(p.vwap));
   ctx.fillStyle = C.vwap;
-  ctx.fillText('VWAP', w - 34 - emaW - 26, 42);
+  if (hasVwap) ctx.fillText('VWAP', w - 34 - emaW - 26, 42);
   ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(140,130,255,0.35)';
   ctx.fillRect(34, 74, w - 68, 1.5);
@@ -82,7 +90,7 @@ export function drawChartScreen(ctx: CanvasRenderingContext2D, w: number, h: num
   if (pts.length < 2) {
     ctx.font = `500 24px ${MONO}`;
     ctx.fillStyle = C.dim;
-    ctx.fillText('waiting for market data…', plot.x, plot.y + 40);
+    ctx.fillText(LIVE_MODE ? 'no market data yet…' : 'waiting for market data…', plot.x, plot.y + 40);
     scanlines(ctx, w, h);
     return;
   }
@@ -90,8 +98,12 @@ export function drawChartScreen(ctx: CanvasRenderingContext2D, w: number, h: num
   let lo = Infinity;
   let hi = -Infinity;
   for (const p of pts) {
-    lo = Math.min(lo, p.price, p.vwap, p.ema50);
-    hi = Math.max(hi, p.price, p.vwap, p.ema50);
+    lo = Math.min(lo, p.price, p.ema50);
+    hi = Math.max(hi, p.price, p.ema50);
+    if (Number.isFinite(p.vwap)) {
+      lo = Math.min(lo, p.vwap);
+      hi = Math.max(hi, p.vwap);
+    }
   }
   if (live > 0) {
     lo = Math.min(lo, live);
@@ -135,12 +147,15 @@ export function drawChartScreen(ctx: CanvasRenderingContext2D, w: number, h: num
     ctx.lineWidth = width;
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    pts.forEach((p, i) => {
+    let started = false;
+    for (const p of pts) {
+      if (!Number.isFinite(p[key])) continue;
       const x = X(p.timestamp);
       const y = Y(p[key]);
-      if (i === 0) ctx.moveTo(x, y);
+      if (!started) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
-    });
+      started = true;
+    }
     if (withLive && live > 0) ctx.lineTo(X(now), Y(live));
     ctx.stroke();
   };
@@ -152,7 +167,7 @@ export function drawChartScreen(ctx: CanvasRenderingContext2D, w: number, h: num
   ctx.shadowBlur = 0;
 
   // Trade markers.
-  const markers = sim.markers.filter((m) => WORKER_BY_ID[m.workerId].ticker === ticker && m.timestamp >= x0 && m.timestamp <= now);
+  const markers = sim.markers.filter((m) => m.ticker === ticker && m.timestamp >= x0 && m.timestamp <= now);
   for (const m of markers) {
     const x = X(m.timestamp);
     const y = Y(m.price);
@@ -255,10 +270,14 @@ export function drawScannerScreen(
   const dir = rt.direction ?? rt.position?.direction ?? null;
   ctx.font = `600 25px ${MONO}`;
   let setup: string;
-  if (charging && dir) setup = `${cfg.setupName} ${ARROW[dir]} ${dir} · ${rt.atrAway.toFixed(2)} ATR away`;
+  // Live distances are real points to the resting trigger, not demo ATRs.
+  const away = LIVE_MODE ? `${rt.atrAway.toFixed(2)} pts to trigger` : `${rt.atrAway.toFixed(2)} ATR away`;
+  if (charging && dir) setup = `${cfg.setupName} ${ARROW[dir]} ${dir} · ${away}`;
   else if (inTrade && dir)
     setup = `IN TRADE ${ARROW[dir]} ${dir} x${rt.position?.contracts ?? ''} @ ${rt.position?.entryPrice.toFixed(2) ?? ''}`;
+  else if (cfg.offline) setup = 'offline · no bot connected';
   else if (rt.status === 'off-duty') setup = 'off duty · market closed';
+  else if (LIVE_MODE) setup = `${cfg.setupName} · ${rt.status === 'cooldown' ? 'done for the session' : 'watching'}`;
   else setup = `${cfg.setupName} · scanning · ${rt.atrAway.toFixed(2)} ATR away`;
   ctx.fillStyle = charging ? (dir === 'PUT' ? C.magenta : C.mint) : inTrade ? C.yellow : C.text;
   ctx.fillText(setup, 30, 132, w - 60);
@@ -363,7 +382,8 @@ export function drawPositionScreen(
   ctx.fillText(cfg.displayName, 28, 40);
   ctx.font = `500 19px ${MONO}`;
   ctx.fillStyle = C.dim;
-  ctx.fillText(day ? `${day.label} · ${formatSessionTime(sim.clock.minute)} ET` : '', 28, 74);
+  const clock = LIVE_MODE ? formatEtClock(sim.clock.minute) : formatSessionTime(sim.clock.minute);
+  ctx.fillText(day ? `${day.label} · ${clock} ET${cfg.paper ? ' · PAPER' : ''}` : '', 28, 74);
 
   const rows: Array<[string, string, string]> = [
     ['EARNED', formatMoney(rt.earned), rt.earned >= 0 ? C.green : C.red],

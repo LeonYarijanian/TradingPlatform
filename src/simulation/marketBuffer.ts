@@ -1,4 +1,6 @@
-import type { MarketPoint, Ticker } from '../types/trading';
+import { ALL_TICKERS, type MarketPoint, type Ticker } from '../types/trading';
+
+const emptyData = () => Object.fromEntries(ALL_TICKERS.map((t) => [t, []])) as unknown as Record<Ticker, MarketPoint[]>;
 
 /**
  * Mutable, non-reactive store of closed minute bars per ticker.
@@ -7,15 +9,21 @@ import type { MarketPoint, Ticker } from '../types/trading';
  * appending hundreds of bars per second never triggers React renders.
  */
 export class MarketBuffer {
-  private data: Record<Ticker, MarketPoint[]> = { QQQ: [], SPY: [], IWM: [] };
+  private data: Record<Ticker, MarketPoint[]> = emptyData();
   version = 0;
 
   constructor(private readonly capacity = 1600) {}
 
+  /** Appends a closed bar; a bar with the newest bar's timestamp replaces it (live bars firm up). */
   push(ticker: Ticker, point: MarketPoint): void {
     const list = this.data[ticker];
     const last = list[list.length - 1];
-    if (last && last.timestamp >= point.timestamp) return;
+    if (last && last.timestamp === point.timestamp) {
+      list[list.length - 1] = point;
+      this.version++;
+      return;
+    }
+    if (last && last.timestamp > point.timestamp) return;
     list.push(point);
     if (list.length > this.capacity) list.splice(0, list.length - this.capacity);
     this.version++;
@@ -45,8 +53,18 @@ export class MarketBuffer {
     return list[list.length - 1];
   }
 
+  /**
+   * Session to chart for `day`: that day once it has bars, otherwise the most
+   * recent session with data (pre-market / weekends show the last close).
+   */
+  focusDay(ticker: Ticker, day: number, sessionMinutes: number): number {
+    const last = this.last(ticker);
+    if (!last || last.timestamp >= day * sessionMinutes) return day;
+    return Math.floor(last.timestamp / sessionMinutes);
+  }
+
   clear(): void {
-    this.data = { QQQ: [], SPY: [], IWM: [] };
+    this.data = emptyData();
     this.version++;
   }
 }

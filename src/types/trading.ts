@@ -9,7 +9,13 @@
 
 export type WorkerId = 'qqq-og' | 'qqq-trend' | 'qqq' | 'spy' | 'iwm';
 
-export type Ticker = 'QQQ' | 'SPY' | 'IWM';
+/** Demo tickers plus the instruments the live towers chart (SPX index, CME micro futures). */
+export type Ticker = 'QQQ' | 'SPY' | 'IWM' | 'SPX' | 'MES' | 'MNQ' | 'MCL';
+
+/** Instruments the demo engine simulates. */
+export type DemoTicker = 'QQQ' | 'SPY' | 'IWM';
+
+export const ALL_TICKERS: readonly Ticker[] = ['QQQ', 'SPY', 'IWM', 'SPX', 'MES', 'MNQ', 'MCL'];
 
 export type WorkerStatus = 'watching' | 'scanning' | 'charging' | 'ready' | 'firing' | 'managing' | 'trailing' | 'cooldown' | 'off-duty';
 
@@ -29,6 +35,10 @@ export interface WorkerConfig {
   position: [number, number, number];
   /** Hotkey number (1-5). */
   hotkey: number;
+  /** Live mode: the tower has no data source and renders dark. */
+  offline?: boolean;
+  /** Live mode: the account trades simulated (paper) money. */
+  paper?: boolean;
 }
 
 /** Live worker strategy state (what a live backend would stream). */
@@ -123,6 +133,8 @@ export interface MarketTick {
 export interface ChartMarker {
   id: string;
   workerId: WorkerId;
+  /** Instrument whose chart the marker belongs on. */
+  ticker: Ticker;
   timestamp: number;
   price: number;
   direction: OptionDirection;
@@ -199,6 +211,8 @@ export interface TradeExecutedEvent {
   dayIndex: number;
   minute: number;
   timestamp: number;
+  /** Replaces the generated log line, e.g. "sold XSP 571/570 put spread x2 @ 0.42 cr". */
+  note?: string;
 }
 
 export interface TradeClosedEvent {
@@ -212,6 +226,15 @@ export interface TradeClosedEvent {
   minute: number;
   timestamp: number;
   underlying: number;
+  /** Replaces the generated close phrase, e.g. "XSP put spread expired". */
+  note?: string;
+}
+
+/** Authoritative position state from a live account (replaces the one implied by fills). */
+export interface PositionEvent {
+  type: 'POSITION';
+  workerId: WorkerId;
+  position: OpenPosition | null;
 }
 
 export interface ThoughtEvent {
@@ -232,6 +255,7 @@ export type BotEvent =
   | BotStatusEvent
   | TradeExecutedEvent
   | TradeClosedEvent
+  | PositionEvent
   | ThoughtEvent;
 
 /** Anything that can push trading events into the UI (demo engine, websocket, SSE...). */

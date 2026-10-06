@@ -4,6 +4,10 @@ import { replay } from '../app/actions';
 import { SPEEDS, usePlayback } from '../simulation/simulationStore';
 import { engine } from '../simulation/controller';
 import { audio } from '../app/audio';
+import { switchCityMode } from '../live/mode';
+
+/** Inside claude.ai the live city is available even while the demo runs. */
+const canGoLive = typeof window !== 'undefined' && 'claude' in window;
 
 /** Compact top-right control cluster. */
 export function SceneControls() {
@@ -20,6 +24,11 @@ export function SceneControls() {
 
   return (
     <nav className="scene-controls" aria-label="Scene controls">
+      {!live && canGoLive && (
+        <button type="button" className="chip-btn live-btn" onClick={() => switchCityMode('live')} title="Back to the live towers">
+          <i className="rec" /> LIVE CITY
+        </button>
+      )}
       {!live && (
         <button
           type="button"

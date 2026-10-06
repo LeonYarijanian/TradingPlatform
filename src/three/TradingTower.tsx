@@ -79,6 +79,7 @@ export function TradingTower({ design, showLabels }: { design: TowerDesign; show
       <WindowsMesh
         data={built.windows}
         boost={() => {
+          if (design.worker.offline) return 0.05;
           const fx = towerFx[id];
           const flash = fx.fireAge < 0.8 ? (1 - fx.fireAge / 0.8) * 0.8 : 0;
           return 1 + fx.highlight * 0.5 + flash;

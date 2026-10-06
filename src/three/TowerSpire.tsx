@@ -73,7 +73,8 @@ export function TowerSpire({ design }: { design: TowerDesign }) {
       .multiplyScalar(1.6 * glow);
     mats.ornament.color.copy(tmp);
     const ringGlow =
-      0.9 + fx.charge * 2.2 + fx.beam * 2 + fx.highlight * 0.6 + (fx.status === 'managing' || fx.status === 'trailing' ? 0.9 : 0);
+      (0.9 + fx.charge * 2.2 + fx.beam * 2 + fx.highlight * 0.6 + (fx.status === 'managing' || fx.status === 'trailing' ? 0.9 : 0)) *
+      (design.worker.offline ? 0.12 : 1);
     tmp
       .copy(WHITE)
       .lerp(fx.color, active ? 0.45 : 0.1)

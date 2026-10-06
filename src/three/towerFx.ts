@@ -152,7 +152,8 @@ export function updateTowerFx(dt: number): void {
     phase[w.id] += dt * rate * Math.PI * 2 * (reduced ? 0.3 : 1);
     fx.pulse = 0.5 + 0.5 * Math.sin(phase[w.id]);
 
-    let target = BASE_INTENSITY[rt.status];
+    // Dark tower: no data source behind it (live mode spare slots).
+    let target = w.offline ? 0.08 : BASE_INTENSITY[rt.status];
     if (fx.fireAge < 0.6) target = 7;
     fx.intensity = damp(fx.intensity, target, 6, dt);
 

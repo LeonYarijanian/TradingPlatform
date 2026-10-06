@@ -39,13 +39,21 @@ export function buildTradingCalendar(startIso: string, count: number, holidays: 
   return days;
 }
 
-/** Session minute (0 = 9:30) → "9:43" */
+const minuteOfDay = (minute: number) => (((9 * 60 + 30 + Math.floor(minute)) % 1440) + 1440) % 1440;
+
+/** Session minute (0 = 9:30; live clocks may run outside the session) → "9:43" */
 export function formatSessionTime(minute: number): string {
-  const total = 9 * 60 + 30 + Math.floor(Math.max(0, Math.min(SESSION_MINUTES, minute)));
+  const total = minuteOfDay(minute);
   const h = Math.floor(total / 60);
   const m = total % 60;
-  const h12 = h > 12 ? h - 12 : h;
+  const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${h12}:${m.toString().padStart(2, '0')}`;
+}
+
+/** Session minute → "2:38 AM" — the wall clock for live mode, where any hour is possible. */
+export function formatEtClock(minute: number): string {
+  const total = minuteOfDay(minute);
+  return `${formatSessionTime(minute)} ${total < 720 ? 'AM' : 'PM'}`;
 }
 
 /** Session minute → "12:00" in 24h-ish market style used by the chart header. */

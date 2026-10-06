@@ -1,6 +1,6 @@
 import { SESSION_MINUTES } from '../data/demoRun';
 import { TICKERS, TICKER_PROFILES } from '../data/marketData';
-import { WORKERS, WORKER_BY_ID } from '../data/workers';
+import { DEMO_WORKERS as WORKERS, DEMO_WORKER_BY_ID as WORKER_BY_ID } from '../data/workers';
 import type {
   BotEvent,
   BotEventSource,
@@ -57,7 +57,7 @@ export class SimulationEngine implements BotEventSource {
     this.segIndex = this.emptyRecord(() => 0);
     this.overrides = this.emptyRecord(() => [] as Segment[]);
     this.lastStatus = this.emptyRecord(() => '');
-    this.lastBar = { QQQ: -1, SPY: -1, IWM: -1 };
+    this.lastBar = { QQQ: -1, SPY: -1, IWM: -1 } as Record<Ticker, number>;
   }
 
   private emptyRecord<T>(make: () => T): Record<WorkerId, T> {
@@ -94,7 +94,7 @@ export class SimulationEngine implements BotEventSource {
     this.segIndex = this.emptyRecord(() => 0);
     this.overrides = this.emptyRecord(() => [] as Segment[]);
     this.lastStatus = this.emptyRecord(() => '');
-    this.lastBar = { QQQ: -1, SPY: -1, IWM: -1 };
+    this.lastBar = { QQQ: -1, SPY: -1, IWM: -1 } as Record<Ticker, number>;
     this.injectCount = 0;
     this.injectRng = createRng(0xfeed);
     const events: BotEvent[] = [

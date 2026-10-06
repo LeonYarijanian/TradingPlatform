@@ -1,5 +1,15 @@
 import { WORKERS, WORKER_BY_ID } from '../data/workers';
-import type { BotEvent, ChartMarker, LogEntry, LogTone, OptionDirection, Ticker, WorkerId, WorkerRuntime } from '../types/trading';
+import {
+  ALL_TICKERS,
+  type BotEvent,
+  type ChartMarker,
+  type LogEntry,
+  type LogTone,
+  type OptionDirection,
+  type Ticker,
+  type WorkerId,
+  type WorkerRuntime,
+} from '../types/trading';
 import { formatMoney } from './pnl';
 
 export interface DayRuntime {
@@ -87,11 +97,10 @@ export function createInitialSimData(runId = 0, days: DayRuntime[] = []): SimDat
     thoughts: record(() => []),
     markers: [],
     fx: record(() => ({ fireSeq: 0, closeSeq: 0, lastPnl: 0, lastDirection: null })),
-    prices: {
-      QQQ: { price: 0, dayOpen: NaN, changePct: 0, timestamp: 0 },
-      SPY: { price: 0, dayOpen: NaN, changePct: 0, timestamp: 0 },
-      IWM: { price: 0, dayOpen: NaN, changePct: 0, timestamp: 0 },
-    },
+    prices: Object.fromEntries(ALL_TICKERS.map((t) => [t, { price: 0, dayOpen: NaN, changePct: 0, timestamp: 0 }])) as Record<
+      Ticker,
+      PriceState
+    >,
     logSeq: 0,
   };
 }
@@ -263,21 +272,27 @@ export function reduceEvents(state: SimData, events: readonly BotEvent[]): SimDa
         const f = fx(ev.workerId);
         f.fireSeq += 1;
         f.lastDirection = ev.direction;
-        const markers = touch('markers');
-        markers.push({
-          id: `${ev.tradeId}-in`,
-          workerId: ev.workerId,
-          timestamp: ev.timestamp,
-          price: ev.underlying,
-          direction: ev.direction,
-          kind: 'entry',
-        });
-        if (markers.length > MARKER_LIMIT) markers.splice(0, markers.length - MARKER_LIMIT);
+        // Live fills on instruments without a chart carry no underlying price: no marker.
+        if (ev.underlying > 0) {
+          const markers = touch('markers');
+          markers.push({
+            id: `${ev.tradeId}-in`,
+            workerId: ev.workerId,
+            ticker: ev.ticker,
+            timestamp: ev.timestamp,
+            price: ev.underlying,
+            direction: ev.direction,
+            kind: 'entry',
+          });
+          if (markers.length > MARKER_LIMIT) markers.splice(0, markers.length - MARKER_LIMIT);
+        }
         pushLog({
           workerId: ev.workerId,
           dayIndex: ev.dayIndex,
           minute: ev.minute,
-          text: `FIRE ${ARROWS[ev.direction]} ${ev.direction} x${ev.contracts} @ ${ev.entry.toFixed(2)} (${ev.ticker} ${ev.underlying.toFixed(2)})`,
+          text: ev.note
+            ? `FIRE ${ARROWS[ev.direction]} ${ev.note}`
+            : `FIRE ${ARROWS[ev.direction]} ${ev.direction} x${ev.contracts} @ ${ev.entry.toFixed(2)} (${ev.ticker} ${ev.underlying.toFixed(2)})`,
           tone: 'action',
         });
         break;
@@ -285,6 +300,7 @@ export function reduceEvents(state: SimData, events: readonly BotEvent[]): SimDa
       case 'TRADE_CLOSED': {
         const rt = worker(ev.workerId);
         const direction = rt.position?.direction ?? s.fx[ev.workerId].lastDirection ?? 'CALL';
+        const ticker = rt.ticker;
         rt.earned += ev.pnl;
         rt.todayPnl += ev.pnl;
         rt.lastPnl = ev.pnl;
@@ -305,19 +321,29 @@ export function reduceEvents(state: SimData, events: readonly BotEvent[]): SimDa
         const f = fx(ev.workerId);
         f.closeSeq += 1;
         f.lastPnl = ev.pnl;
-        const markers = touch('markers');
-        markers.push({
-          id: `${ev.tradeId}-out`,
-          workerId: ev.workerId,
-          timestamp: ev.timestamp,
-          price: ev.underlying,
-          direction,
-          kind: 'exit',
-          pnl: ev.pnl,
-        });
-        if (markers.length > MARKER_LIMIT) markers.splice(0, markers.length - MARKER_LIMIT);
-        const { text, tone } = closeText(ev.reason, ev.pnl);
+        if (ev.underlying > 0) {
+          const markers = touch('markers');
+          markers.push({
+            id: `${ev.tradeId}-out`,
+            workerId: ev.workerId,
+            ticker,
+            timestamp: ev.timestamp,
+            price: ev.underlying,
+            direction,
+            kind: 'exit',
+            pnl: ev.pnl,
+          });
+          if (markers.length > MARKER_LIMIT) markers.splice(0, markers.length - MARKER_LIMIT);
+        }
+        const { text, tone } = ev.note
+          ? { text: `${ev.note} ${formatMoney(ev.pnl)}`, tone: (ev.pnl >= 0 ? 'profit' : 'loss') as LogTone }
+          : closeText(ev.reason, ev.pnl);
         pushLog({ workerId: ev.workerId, dayIndex: ev.dayIndex, minute: ev.minute, text, tone });
+        break;
+      }
+      case 'POSITION': {
+        const rt = worker(ev.workerId);
+        rt.position = ev.position;
         break;
       }
       case 'THOUGHT':

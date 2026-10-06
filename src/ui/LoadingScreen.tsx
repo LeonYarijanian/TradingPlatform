@@ -35,10 +35,10 @@ export function LoadingScreen() {
           INITIALIZING WORKERS<span className="ls-dots">...</span>
         </div>
         {WORKERS.map((w, i) => (
-          <div key={w.id} className={`ls-line ${i < shown ? 'on' : ''}`}>
+          <div key={w.id} className={`ls-line ${i < shown ? 'on' : ''} ${w.offline ? 'is-offline' : ''}`}>
             <span className="ls-name">{w.displayName}</span>
             <span className="ls-fill" />
-            <span className="ls-ok">{i < shown ? 'ONLINE' : '…'}</span>
+            <span className="ls-ok">{i < shown ? (w.offline ? 'OFFLINE' : 'ONLINE') : '…'}</span>
           </div>
         ))}
         <div className={`ls-line vault ${shown >= WORKERS.length ? 'on' : ''}`}>

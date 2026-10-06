@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { SESSION_MINUTES } from '../data/demoRun';
-import { WORKER_BY_ID } from '../data/workers';
+import { LIVE_MODE } from '../live/mode';
 import { formatPercent, formatPrice } from '../simulation/pnl';
 import { getSim, marketBuffer } from '../simulation/simulationStore';
 import type { ChartMarker, MarketPoint, Ticker } from '../types/trading';
@@ -84,6 +84,8 @@ class WallRibbon {
   }
 }
 const TICKER: Ticker = 'QQQ';
+/** Side tags: the demo's other ETFs, or the live towers' instruments. */
+const SIDE_TICKERS: readonly [Ticker, Ticker] = LIVE_MODE ? ['SPX', 'MES'] : ['SPY', 'IWM'];
 /** Map the session onto the part of the arc that is actually in view. */
 const CHART_U0 = 0.21;
 const CHART_U1 = 0.79;
@@ -190,11 +192,11 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     vys: [] as number[],
     markers: [] as ChartMarker[],
   });
-  const tags = {
-    QQQ: { price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
-    SPY: { price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
-    IWM: { price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
-  };
+  const tags = [
+    { ticker: TICKER, price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
+    { ticker: SIDE_TICKERS[0], price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
+    { ticker: SIDE_TICKERS[1], price: useRef<HTMLSpanElement>(null), chg: useRef<HTMLSpanElement>(null) },
+  ];
   const lastTag = useRef(0);
 
   const tmp = useMemo(() => new THREE.Vector3(), []);
@@ -216,9 +218,11 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
 
   useFrame((state) => {
     const sim = getSim();
-    const day = sim.clock.dayIndex;
+    // Live: before the open (or on a weekend) keep showing the last session.
+    const day = LIVE_MODE ? marketBuffer.focusDay(TICKER, sim.clock.dayIndex, SESSION_MINUTES) : sim.clock.dayIndex;
     const dayStart = day * SESSION_MINUTES;
-    const now = dayStart + sim.clock.minute;
+    const inSession = day === sim.clock.dayIndex && sim.clock.minute >= 0 && sim.clock.minute <= SESSION_MINUTES;
+    const now = dayStart + (LIVE_MODE ? (inSession ? sim.clock.minute : SESSION_MINUTES) : sim.clock.minute);
     const scratch = scratchRef.current;
     const pts = marketBuffer.window(TICKER, dayStart, dayStart + SESSION_MINUTES - 1, scratch.pts);
     const live = sim.prices[TICKER].price;
@@ -227,10 +231,15 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     let lo = Infinity;
     let hi = -Infinity;
     for (const p of pts) {
-      lo = Math.min(lo, p.price, p.vwap);
-      hi = Math.max(hi, p.price, p.vwap);
+      lo = Math.min(lo, p.price);
+      hi = Math.max(hi, p.price);
+      if (Number.isFinite(p.vwap)) {
+        lo = Math.min(lo, p.vwap);
+        hi = Math.max(hi, p.vwap);
+      }
     }
-    if (live > 0) {
+    const liveHead = live > 0 && (LIVE_MODE ? inSession : !sim.clock.finished);
+    if (liveHead) {
       lo = Math.min(lo, live);
       hi = Math.max(hi, live);
     }
@@ -258,10 +267,11 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     for (const p of pts) {
       us.push(uOf(p.timestamp));
       ys.push(yOf(p.price));
+      if (!Number.isFinite(p.vwap)) continue;
       vus.push(uOf(p.timestamp));
       vys.push(yOf(p.vwap));
     }
-    if (live > 0 && !sim.clock.finished) {
+    if (liveHead) {
       us.push(uOf(now));
       ys.push(yOf(live));
     }
@@ -289,7 +299,8 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     for (let i = sim.markers.length - 1; i >= 0 && markers.length < MAX_MARKERS; i--) {
       const m = sim.markers[i];
       if (m.timestamp < dayStart) break;
-      if (m.kind === 'entry' && WORKER_BY_ID[m.workerId].ticker === TICKER) markers.push(m);
+      if (m.timestamp >= dayStart + SESSION_MINUTES) continue;
+      if (m.kind === 'entry' && m.ticker === TICKER) markers.push(m);
     }
     const nodes = nodesRef.current;
     const mpos = markerLines.geo.attributes.position as THREE.BufferAttribute;
@@ -320,9 +331,8 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
     // Price tags (~12 Hz).
     if (state.clock.elapsedTime - lastTag.current > 0.08) {
       lastTag.current = state.clock.elapsedTime;
-      for (const t of ['QQQ', 'SPY', 'IWM'] as Ticker[]) {
-        const ps = sim.prices[t];
-        const refs = tags[t];
+      for (const refs of tags) {
+        const ps = sim.prices[refs.ticker];
         if (refs.price.current) refs.price.current.textContent = ps.price > 0 ? formatPrice(ps.price) : '—';
         if (refs.chg.current) {
           refs.chg.current.textContent = ps.price > 0 ? formatPercent(ps.changePct) : '';
@@ -376,14 +386,26 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
         <>
           <group ref={headLabelRef}>
             <Html portal={labelPortal} center zIndexRange={[6, 2]} pointerEvents="none">
-              <PriceTag ticker="QQQ" refs={tags.QQQ} />
+              <PriceTag ticker={tags[0].ticker} refs={tags[0]} />
             </Html>
           </group>
-          <Html portal={labelPortal} position={wallPoint(0.8, WALL.chartY0 + 3.2).toArray()} center zIndexRange={[6, 2]} pointerEvents="none">
-            <PriceTag ticker="SPY" refs={tags.SPY} />
+          <Html
+            portal={labelPortal}
+            position={wallPoint(0.8, WALL.chartY0 + 3.2).toArray()}
+            center
+            zIndexRange={[6, 2]}
+            pointerEvents="none"
+          >
+            <PriceTag ticker={tags[1].ticker} refs={tags[1]} />
           </Html>
-          <Html portal={labelPortal} position={wallPoint(0.2, WALL.chartY0 + 3.2).toArray()} center zIndexRange={[6, 2]} pointerEvents="none">
-            <PriceTag ticker="IWM" refs={tags.IWM} />
+          <Html
+            portal={labelPortal}
+            position={wallPoint(0.2, WALL.chartY0 + 3.2).toArray()}
+            center
+            zIndexRange={[6, 2]}
+            pointerEvents="none"
+          >
+            <PriceTag ticker={tags[2].ticker} refs={tags[2]} />
           </Html>
         </>
       )}

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { LIVE_MODE } from '../live/mode';
 import type { WorkerId } from '../types/trading';
 
 export type SceneId = 'city' | 'station';
@@ -12,7 +13,8 @@ export interface SceneTransition {
 }
 
 export interface LiveSourceConfig {
-  kind: 'ws' | 'sse';
+  /** `claude`: the built-in live towers (claude.ai connectors + desk bridge). */
+  kind: 'ws' | 'sse' | 'claude';
   url: string;
 }
 
@@ -49,11 +51,13 @@ const lowPower =
     typeof window !== 'undefined' &&
     (window.innerWidth < 760 || (typeof navigator !== 'undefined' && (navigator.hardwareConcurrency ?? 8) <= 4)));
 
-const live: LiveSourceConfig | null = params.get('ws')
-  ? { kind: 'ws', url: params.get('ws')! }
-  : params.get('sse')
-    ? { kind: 'sse', url: params.get('sse')! }
-    : null;
+const live: LiveSourceConfig | null = LIVE_MODE
+  ? { kind: 'claude', url: '' }
+  : params.get('ws')
+    ? { kind: 'ws', url: params.get('ws')! }
+    : params.get('sse')
+      ? { kind: 'sse', url: params.get('sse')! }
+      : null;
 
 export const useUi = create<UiStore>()((set) => ({
   live,

@@ -1,10 +1,11 @@
+import { LIVE_MODE } from '../live/mode';
 import type { WorkerConfig, WorkerId } from '../types/trading';
 
 /**
- * The five trading workers. Order matters: it is the left → right order of the
- * skyscrapers in the city and the 1-5 hotkey order.
+ * The five demo trading workers. Order matters: it is the left → right order
+ * of the skyscrapers in the city and the 1-5 hotkey order.
  */
-export const WORKERS: readonly WorkerConfig[] = [
+export const DEMO_WORKERS: readonly WorkerConfig[] = [
   {
     id: 'qqq-og',
     ticker: 'QQQ',
@@ -62,6 +63,38 @@ export const WORKERS: readonly WorkerConfig[] = [
   },
 ] as const;
 
+/**
+ * Live mode keeps the same five buildings (ids, positions, heights) and swaps
+ * in the real desks: left = VolX (IB paper futures), next = the Robinhood SPX
+ * bot, middle = the owner's own Robinhood trading. The two spare towers stay
+ * dark until something real is connected to them.
+ */
+const LIVE_PROFILE: Record<WorkerId, Partial<WorkerConfig>> = {
+  'qqq-og': {
+    ticker: 'MES',
+    displayName: 'VOLX',
+    strategy: 'MES vol breakout · overnight MNQ/MCL',
+    setupName: 'VolX break',
+    paper: true,
+  },
+  'qqq-trend': {
+    ticker: 'SPX',
+    displayName: 'SPX BOT',
+    strategy: 'XSP 0DTE credit spreads',
+    setupName: 'credit spread',
+  },
+  qqq: {
+    ticker: 'QQQ',
+    displayName: 'MY ROBINHOOD',
+    strategy: 'Robinhood options · manual',
+    setupName: 'discretionary',
+  },
+  spy: { strategy: 'not connected', setupName: 'offline', offline: true },
+  iwm: { strategy: 'not connected', setupName: 'offline', offline: true },
+};
+
+export const WORKERS: readonly WorkerConfig[] = LIVE_MODE ? DEMO_WORKERS.map((w) => ({ ...w, ...LIVE_PROFILE[w.id] })) : DEMO_WORKERS;
+
 export const WORKER_IDS: readonly WorkerId[] = WORKERS.map((w) => w.id);
 
 export const WORKER_BY_ID: Record<WorkerId, WorkerConfig> = Object.fromEntries(WORKERS.map((w) => [w.id, w])) as Record<
@@ -72,3 +105,9 @@ export const WORKER_BY_ID: Record<WorkerId, WorkerConfig> = Object.fromEntries(W
 export function workerByHotkey(key: number): WorkerConfig | undefined {
   return WORKERS.find((w) => w.hotkey === key);
 }
+
+/** The demo engine always simulates the demo roster, whichever city is shown. */
+export const DEMO_WORKER_BY_ID: Record<WorkerId, WorkerConfig> = Object.fromEntries(DEMO_WORKERS.map((w) => [w.id, w])) as Record<
+  WorkerId,
+  WorkerConfig
+>;

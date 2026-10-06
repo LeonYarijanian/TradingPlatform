@@ -8,9 +8,11 @@ a towering light beam when they take a trade, and send realized profit into **th
 at the centre of the city. You can step inside any worker's **workstation** to watch a
 little robot read its chart, scanner and "thoughts". A run ends on a **performance summary**.
 
-The app runs entirely on deterministic demo data, so it needs no API keys or brokerage
-account. It is also wired so that a real bot or market feed can drive it later
-([see below](#plugging-in-live-bots--market-data)).
+Opened inside claude.ai, the city goes **live**. Three towers are wired to real desks:
+VolX, the Robinhood SPX bot and your own Robinhood trading
+([see Live city](#live-city)). Anywhere else, it replays a deterministic 23-day demo
+run that needs no API keys or brokerage account. Any other bot or market feed can drive
+it too ([see below](#plugging-in-live-bots--market-data)).
 
 ![City: charging](docs/screenshots/city-charging.jpg)
 
@@ -175,6 +177,40 @@ mapping and a vignette. Labels are drei `Html` anchored in world space. Monitor 
 same light layout, so switching scenes never triggers shader recompiles. DPR is capped at
 1.5. `prefers-reduced-motion` disables camera drift, twinkle, bobbing and beam flicker.
 
+## Live city
+
+When the page runs inside claude.ai (`window.claude` exists), it starts in live mode.
+The `#demo` link anchor switches back to the demo run; the FEEDS panel has the same
+switch. `#live` forces live mode, for example in local dev.
+
+| Tower | Source | How it gets there |
+| --- | --- | --- |
+| **VOLX** (left, `PAPER`) | VolX desk: MES vol breakout plus MNQ/MCL overnight, IB paper | the local [`volxdesk` bridge](bridge/README.md) on the desk PC; elsewhere, the last copy it synced to the page's database |
+| **SPX BOT** | the agent-traded Robinhood account (XSP 0DTE credit spreads) | the viewer's claude.ai Robinhood connector, read-only |
+| **MY ROBINHOOD** (middle) | the owner's default Robinhood account | same connector |
+| SPY, IWM | nothing yet | dark, `OFFLINE`, no P&L |
+
+- **The vault** holds realized P&L since **Tue 10/6/2026** (`LIVE_START` in
+  `src/live/config.ts`), with no earlier history. It is VolX paper P&L plus both
+  Robinhood accounts, as Robinhood's P&L hub and the desk booked it. Days come from the
+  NYSE calendar in America/New_York time.
+- **FIRE:** an opening fill makes the tower fire. Legs filled within 90 s count as one
+  trade, so a credit spread placed as two orders fires once. A short put or long call
+  reads bullish (mint); a short call or long put reads bearish (magenta). VolX fires on
+  its breakout entry (BUY = mint, SELL = magenta).
+- **Charge:** VolX charges toward whichever resting breakout stop the MES price is
+  nearer, as a percentage of the breakout width. The Robinhood towers have no signal
+  to show, so they watch while flat and manage while a position is open.
+- **Charts:** SPX (no volume, so no VWAP), QQQ and MES 1-minute bars. Before the open
+  and on weekends they show the last session.
+- **Read-only:** the page declares only these Robinhood tools: `get_accounts`,
+  `get_option_orders`, `get_pnl_trade_history`, `get_index_historicals` and
+  `get_equity_historicals`. From the bridge it uses `desk_events`. Nothing can place,
+  change or cancel an order.
+- The code lives in `src/live/`. The pure mappers (`robinhood.ts`, `volx.ts`,
+  `marketClock.ts`) are unit-tested. `runner.ts` merges feeds into the same `BotEvent`
+  stream the demo engine produces.
+
 ## Plugging in live bots / market data
 
 The UI consumes the `BotEvent` protocol (`src/types/trading.ts`). Start the app with
@@ -240,7 +276,7 @@ orders.
 
 ## Testing
 
-`npm test` runs five suites:
+`npm test` runs six suites:
 
 - **Simulation:** determinism; exact per-worker and per-day totals; the best day; a
   stronger last third; non-overlapping worker timelines; trade direction agreeing with
@@ -252,6 +288,10 @@ orders.
   workstation visit; finishing near 96 s; the summary opening; mid-run resume.
 - **Live parsing:** the documented payloads, snake_case input, and malformed input.
 - **Transitions:** fly-out → swap → settle, no restart on key repeat, redirect mid-flight.
+- **Live city:** ET/DST math and the session calendar; Robinhood spreads firing once; P&L
+  rows grouped per close, ignoring anything before the start; position until expiry;
+  VolX charge, fire, close and cooldown; the runner ingesting each event once and
+  topping up a deposit that grows between polls.
 
 ## Notes
 

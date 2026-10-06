@@ -16,7 +16,7 @@ import {
   workerWeight,
 } from '../data/demoRun';
 import { TICKER_PROFILES } from '../data/marketData';
-import { WORKERS } from '../data/workers';
+import { DEMO_WORKERS as WORKERS } from '../data/workers';
 import type { FizzleEvent, OptionDirection, TradeEvent, WorkerId } from '../types/trading';
 import { buildTradingCalendar, type CalendarDay } from './calendar';
 import { generateMarket, type MarketSeries } from './marketGenerator';
