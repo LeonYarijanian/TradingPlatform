@@ -10,6 +10,7 @@ import { VaultLabel } from '../ui/VaultLabel';
 import { GEOMETRIES, MATERIALS } from './materials';
 import { hdr, PALETTE } from './palette';
 import { PLAZA_RADIUS, VAULT_BASE_HEIGHT, VAULT_DOME_RADIUS, VAULT_POS, VAULT_WALL_HEIGHT, VAULT_WALL_RADIUS } from './layout';
+import { labelPortal } from './labelLayer';
 import { NO_RAYCAST } from './WindowsMesh';
 
 const PANELS = 20;
@@ -177,7 +178,7 @@ export function Vault({ showLabel }: { showLabel: boolean }) {
       </mesh>
 
       {showLabel && (
-        <Html position={[0, 2.75, -0.2]} center zIndexRange={[16, 8]}>
+        <Html portal={labelPortal} position={[0, 2.75, -0.2]} center zIndexRange={[16, 8]}>
           <VaultLabel />
         </Html>
       )}

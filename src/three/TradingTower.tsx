@@ -14,6 +14,7 @@ import type { TowerDesign } from './towerDesign';
 import { towerFx } from './towerFx';
 import { TowerPlatform } from './TowerPlatform';
 import { TowerSpire } from './TowerSpire';
+import { labelPortal } from './labelLayer';
 import { NO_RAYCAST, WindowsMesh } from './WindowsMesh';
 
 const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
@@ -109,10 +110,10 @@ export function TradingTower({ design, showLabels }: { design: TowerDesign; show
 
       {showLabels && (
         <>
-          <Html position={[x, design.plaqueY, design.plaqueZ]} center zIndexRange={[12, 4]} pointerEvents="none">
+          <Html portal={labelPortal} position={[x, design.plaqueY, design.plaqueZ]} center zIndexRange={[12, 4]} pointerEvents="none">
             <TowerPlaque workerId={id} />
           </Html>
-          <Html position={[x + design.statusX, design.statusY, z]} center zIndexRange={[14, 6]} pointerEvents="none">
+          <Html portal={labelPortal} position={[x + design.statusX, design.statusY, z]} center zIndexRange={[14, 6]} pointerEvents="none">
             <WorkerStatusCard workerId={id} />
           </Html>
         </>

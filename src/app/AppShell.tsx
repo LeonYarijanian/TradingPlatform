@@ -1,5 +1,6 @@
 import { useUi } from './uiStore';
 import { SceneRoot } from '../scenes/SceneRoot';
+import { mountLabelLayer } from '../three/labelLayer';
 import { DebugPanel } from '../ui/DebugPanel';
 import { EventTicker } from '../ui/EventTicker';
 import { LoadingScreen } from '../ui/LoadingScreen';
@@ -19,6 +20,7 @@ export function AppShell() {
     <div className={`app scene-${scene} ${summaryOpen ? 'summary-open' : ''}`}>
       <main className="scene-layer" aria-label="Neon trading city">
         <SceneRoot />
+        <div className="label-layer-host" ref={mountLabelLayer} />
       </main>
       <TransitionFlash />
       <div className="hud-layer">

@@ -1,4 +1,6 @@
 :root {
+  /* Deliberately single-theme: a neon night city. */
+  color-scheme: dark;
   --bg: #04030b;
   --bg-2: #050510;
   --navy: #07072a;

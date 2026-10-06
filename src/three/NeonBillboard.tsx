@@ -1,10 +1,10 @@
-import { Text } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { useUi } from '../app/uiStore';
 import { FONT_DISPLAY } from './fonts';
 import { rectFrameGeometry } from './geometryUtils';
+import { SafeText } from './SafeText';
 import { NO_RAYCAST } from './WindowsMesh';
 
 interface Props {
@@ -72,7 +72,7 @@ export function NeonBillboard({ text, color, position, rotationY = 0, width, hei
       </mesh>
       <mesh geometry={geo.border} material={mats.border} raycast={NO_RAYCAST} />
       <mesh geometry={geo.inner} material={mats.inner} position={[0, 0, 0.01]} raycast={NO_RAYCAST} />
-      <Text
+      <SafeText
         font={FONT_DISPLAY}
         fontSize={height * 0.5}
         letterSpacing={0.04}
@@ -84,7 +84,7 @@ export function NeonBillboard({ text, color, position, rotationY = 0, width, hei
         raycast={NO_RAYCAST}
       >
         {text}
-      </Text>
+      </SafeText>
       {/* Thin vertical mounting pole */}
       <mesh material={mats.pole} position={[0, -height / 2 - poleHeight / 2, -0.05]} raycast={NO_RAYCAST}>
         <boxGeometry args={[0.04, poleHeight, 0.04]} />

@@ -1,4 +1,4 @@
-import { Html, Text } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
@@ -9,6 +9,8 @@ import { getSim, marketBuffer } from '../simulation/simulationStore';
 import type { ChartMarker, MarketPoint, Ticker } from '../types/trading';
 import { FONT_MONO } from './fonts';
 import { hdr, PALETTE, SIGNAL_COLORS } from './palette';
+import { SafeText } from './SafeText';
+import { labelPortal } from './labelLayer';
 import { NO_RAYCAST } from './WindowsMesh';
 
 /** Curved wall geometry (cylinder segment around the city). */
@@ -126,12 +128,9 @@ function PriceTag({
     <div className="wall-tag">
       <span className="wt-sym">{ticker}</span>
       <span className="wt-row">
-        <span ref={refs.price} className="wt-price">
-          —
-        </span>
-        <span ref={refs.chg} className="wt-chg">
-          —
-        </span>
+        {/* Text is written by the render loop, so React must not own these children. */}
+        <span ref={refs.price} className="wt-price" />
+        <span ref={refs.chg} className="wt-chg" />
       </span>
     </div>
   );
@@ -358,7 +357,7 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
         <meshBasicMaterial color={hdr('#ffffff', 4)} fog={false} />
       </mesh>
       {timeLabels.map((t) => (
-        <Text
+        <SafeText
           key={t.label}
           font={FONT_MONO}
           fontSize={0.8}
@@ -371,19 +370,19 @@ export function MarketWall({ showLabels }: { showLabels: boolean }) {
           raycast={NO_RAYCAST}
         >
           {t.label}
-        </Text>
+        </SafeText>
       ))}
       {showLabels && (
         <>
           <group ref={headLabelRef}>
-            <Html center zIndexRange={[6, 2]} pointerEvents="none">
+            <Html portal={labelPortal} center zIndexRange={[6, 2]} pointerEvents="none">
               <PriceTag ticker="QQQ" refs={tags.QQQ} />
             </Html>
           </group>
-          <Html position={wallPoint(0.8, WALL.chartY0 + 3.2).toArray()} center zIndexRange={[6, 2]} pointerEvents="none">
+          <Html portal={labelPortal} position={wallPoint(0.8, WALL.chartY0 + 3.2).toArray()} center zIndexRange={[6, 2]} pointerEvents="none">
             <PriceTag ticker="SPY" refs={tags.SPY} />
           </Html>
-          <Html position={wallPoint(0.2, WALL.chartY0 + 3.2).toArray()} center zIndexRange={[6, 2]} pointerEvents="none">
+          <Html portal={labelPortal} position={wallPoint(0.2, WALL.chartY0 + 3.2).toArray()} center zIndexRange={[6, 2]} pointerEvents="none">
             <PriceTag ticker="IWM" refs={tags.IWM} />
           </Html>
         </>

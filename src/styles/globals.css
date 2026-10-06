@@ -69,6 +69,19 @@ kbd {
   touch-action: none;
 }
 
+.label-layer-host,
+.label-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* Labels opt back in (e.g. the clickable vault panel); drei sets 'none' inline where needed. */
+.label-layer > div {
+  pointer-events: auto;
+}
+
 .hud-layer {
   position: absolute;
   inset: 0;
